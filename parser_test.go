@@ -37,25 +37,21 @@ type Jack struct {
 // @SECURITY petstore_auth=write:pets,read:pets
 //
 // @SECURITY_DEFINITION petstore_auth
-// @NAME abc
 // @TYPE oauth2
-// @DESCRIPTION oauth2 security
-// @IN header
 // @FLOW password
-// @AUTHORIZATION_URL http://swagger.io/api/oauth/dialog
 // @TOKEN_URL http://swagger.io/api/oauth/token
 // @SCOPES write:pets="modify pets in your account" read:pets="read your pets"
 //
-// @GLOBAL_PARAM userParam name=user required description="sadsadsad" in=body schema.$ref=Parameter
-// @GLOBAL_PARAM userParam2 name=user required description="sadsadsad" in=body schema.$ref=Parameter
+// @GLOBAL_PARAM userParam name=user required description="sadsadsad" in=body schema.$ref=Witoo
+// @GLOBAL_PARAM userParam2 name=user required description="sadsadsad" in=body schema.$ref=Jack
 //
-// @GLOBAL_RESPONSE notFound desc="Entity not found." schema.$ref=GeneralError
-// @GLOBAL_RESPONSE notFound2 desc="Entity not found." schema.$ref=GeneralError
+// @GLOBAL_RESPONSE notFound desc="Entity not found." schema.$ref=Witoo
+// @GLOBAL_RESPONSE notFound2 desc="Entity not found." schema.$ref=Jack
 //
 // @PATH /user/jack/{id}
 // @METHOD GET
-// @PARAM name=user required description="sadsadsad" in=body schema.$ref=Parameter
-// @PARAM name=id type=array items.$ref=#/parameters/skip
+// @PARAM name=id required description="sadsadsad" in=path type=string
+// @PARAM name=user required description="sadsadsad" in=body schema.$ref=Jack
 // @PRODUCES json
 // @CONSUMES json
 // @SUMMARY this is summary
@@ -70,5 +66,6 @@ func TestAnnotation(t *testing.T) {
 	basePath := "/Users/witooh/dev/go/src/github.com/plimble/arlong"
 	parser := NewParser(basePath)
 	parser.Parse()
-	pretty.Println(swagger)
+	b, _ := parser.JSON()
+	pretty.Println(string(b))
 }

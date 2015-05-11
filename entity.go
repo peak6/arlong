@@ -35,11 +35,15 @@ const (
 var swagger *Swagger
 
 func init() {
+	newSwagger()
+}
+
+func newSwagger() {
 	swagger = &Swagger{
 		Swagger:             "2.0",
 		Paths:               make(map[string]*Path),
 		Definitions:         make(map[string]*Definition),
-		Security:            make(map[string][]string),
+		Security:            []map[string][]string{},
 		SecurityDefinitions: make(map[string]*SecurityDefinitions),
 		Parameters:          make(map[string]*Parameter),
 		Responses:           make(map[string]*Responses),
@@ -56,7 +60,7 @@ type Swagger struct {
 	Produces            []string                        `json:"produces,omitempty"`
 	Paths               map[string]*Path                `json:"paths"`
 	Definitions         map[string]*Definition          `json:"definitions,omitempty"`
-	Security            map[string][]string             `json:"security,omitempty"`
+	Security            []map[string][]string           `json:"security,omitempty"`
 	SecurityDefinitions map[string]*SecurityDefinitions `json:"securityDefinitions,omitempty"`
 	Parameters          map[string]*Parameter           `json:"parameters,omitempty"`
 	Responses           map[string]*Responses           `json:"responses,omitempty"`
@@ -106,7 +110,7 @@ type Operation struct {
 	Responses   map[string]*Responses `json:"responses,omitempty"`
 	Schemes     []string              `json:"schemes,omitempty"`
 	Deprecated  bool                  `json:"deprecated,omitempty"`
-	Security    map[string][]string   `json:"security,omitempty"`
+	Security    []map[string][]string `json:"security,omitempty"`
 }
 
 type Parameter struct {

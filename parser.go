@@ -20,6 +20,8 @@ func NewParser(basePkgPath string) *Parser {
 }
 
 func (a *Parser) Parse() error {
+	newSwagger()
+
 	packages, err := parsePackages(a.basePkgPath)
 	if err != nil {
 		return err
@@ -168,7 +170,7 @@ func parseSwagger(comments []*ast.Comment) int {
 				}
 				swagger.Produces = valsArray
 			case "@SECURITY":
-				swagger.Security = getValueMapStrings(vals)
+				swagger.Security = append(swagger.Security, getValueMapStrings(vals))
 			}
 		}
 	}
@@ -312,7 +314,7 @@ func parsePath(comments []*ast.Comment) int {
 			case "@OPERATIONID":
 				method.OperationId = vals
 			case "@SECURITY":
-				method.Security = getValueMapStrings(vals)
+				method.Security = append(method.Security, getValueMapStrings(vals))
 			case "@TAGS":
 				method.Tags = getValueStrings(vals)
 			case "@PARAM":
@@ -511,7 +513,7 @@ func parseModel(name string, astStruct *ast.StructType) {
 				if field.AdditionalProperties.Type == "unknown" {
 					field.AdditionalProperties.Type = ""
 					field.AdditionalProperties.Format = ""
-					field.AdditionalProperties.Ref = "#/definition/" + mapType.String()
+					field.AdditionalProperties.Ref = "#/definitions/" + mapType.String()
 				}
 			}
 		case *ast.ArrayType:
@@ -528,21 +530,21 @@ func parseModel(name string, astStruct *ast.StructType) {
 			if field.Type == "unknown" {
 				field.Type = ""
 				field.Format = ""
-				field.Ref = "#/definition/" + fmt.Sprint(fieldType.X)
+				field.Ref = "#/definitions/" + fmt.Sprint(fieldType.X)
 			}
 		case *ast.SelectorExpr:
 			field.Type, field.Format = getTypeFormat(fieldType.Sel.Name)
 			if field.Type == "unknown" {
 				field.Type = ""
 				field.Format = ""
-				field.Ref = "#/definition/" + fieldType.Sel.Name
+				field.Ref = "#/definitions/" + fieldType.Sel.Name
 			}
 		case *ast.Ident:
 			field.Type, field.Format = getTypeFormat(fieldType.String())
 			if field.Type == "unknown" {
 				field.Type = ""
 				field.Format = ""
-				field.Ref = "#/definition/" + fieldType.String()
+				field.Ref = "#/definitions/" + fieldType.String()
 			}
 		}
 	}

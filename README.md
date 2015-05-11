@@ -67,6 +67,7 @@ func main(){
  - Unit test
  - Compatible all swagger 2.0 spec
  - Document
+ - Validate spec
 
 ##Contributing
 If you'd like to help out with the project. You can put up a Pull Request.
