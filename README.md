@@ -3,7 +3,7 @@ Arlong [![godoc badge](http://godoc.org/github.com/plimble/arlong?status.png)](h
 
 Swagger 2.0 Generator
 
-###Example
+##Example
 ```go
 // @SWAGGER
 // @TITLE Api
@@ -52,7 +52,7 @@ func main(){
 }
 ```
 
-###API
+##API
 ```go
 func main(){
   a := arlong.NewParser("~/go/src/path/to/package")
@@ -60,10 +60,14 @@ func main(){
 }
 ```
 
-###Todo
+##Todo
  - CLI
  - More format
  - Generate Restful Go Client
  - Unit test
  - Compatible all swagger 2.0 spec
+
+##Contributing
+If you'd like to help out with the project. You can put up a Pull Request.
+
 
