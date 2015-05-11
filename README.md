@@ -1,4 +1,4 @@
-Arlong
+Arlong [![godoc badge](http://godoc.org/github.com/plimble/arlong?status.png)](http://godoc.org/github.com/plimble/arlong)
 ========
 
 Swagger 2.0 Generator
@@ -51,3 +51,19 @@ func main(){
 
 }
 ```
+
+###API
+```go
+func main(){
+  a := arlong.NewParser("~/go/src/path/to/package")
+  b, err := a.JSON() //generate swagger 2.0 json format
+}
+```
+
+###Todo
+ - CLI
+ - More format
+ - Generate Restful Go Client
+ - Unit test
+ - Compatible all swagger 2.0 spec
+
