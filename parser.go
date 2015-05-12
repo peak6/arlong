@@ -573,7 +573,7 @@ func (p *Parser) parseDefinition(packName string, comments []*ast.Comment, astTy
 
 						if astIdent, ok := astStarExpr.X.(*ast.Ident); ok {
 							compositeDef = append(compositeDef, &Definition{
-								Ref: "#/definitions/" + astIdent.Name,
+								Ref: "#/definitions/" + packName + "." + astIdent.Name,
 							})
 							// propName = astIdent.Name
 							continue
