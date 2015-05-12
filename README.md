@@ -106,7 +106,6 @@ GLOBAL OPTIONS:
 ```
 
 ##Todo
- - CLI
  - More format
  - Generate Restful Go Client
  - Unit test
