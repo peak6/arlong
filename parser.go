@@ -378,7 +378,7 @@ func parseParam(param *Parameter, vals map[string]string) {
 			}
 			parseSchema(param.Schema, strings.TrimPrefix(key, "schema."), val)
 		case key == "type":
-			param.Type, param.Format = getTypeFormat(val)
+			param.Type, param.Format, _ = getTypeFormat(val)
 		case key == "allowEmptyValue":
 			param.AllowEmptyValue = true
 		case pathMatch("items.*", key):
@@ -407,7 +407,7 @@ func parseParam(param *Parameter, vals map[string]string) {
 func parseSchema(s *Schema, key, val string) {
 	switch {
 	case key == "type":
-		s.Type, s.Format = getTypeFormat(val)
+		s.Type, s.Format, _ = getTypeFormat(val)
 	case key == "$ref":
 		s.Ref = "#/definitions/" + val
 	case pathMatch("items.*", key):
@@ -423,7 +423,7 @@ func parseItem(item *Items, key, val string) {
 	case key == "$ref":
 		item.Ref = "#/definitions/" + val
 	case key == "type":
-		item.Type, item.Format = getTypeFormat(val)
+		item.Type, item.Format, _ = getTypeFormat(val)
 	case key == "default":
 		item.Default = val
 	case key == "maximum":
@@ -575,6 +575,7 @@ func parseDefinition(comments []*ast.Comment, astTypeSpec *ast.TypeSpec) {
 }
 
 func parseProperties(def *Definition, astType ast.Expr) {
+	var ok bool
 	switch fieldType := astType.(type) {
 	case *ast.MapType:
 		def.Type = "object"
@@ -585,11 +586,11 @@ func parseProperties(def *Definition, astType ast.Expr) {
 		case *ast.InterfaceType:
 			def.AdditionalProperties.Type = "any"
 		case *ast.Ident:
-			def.AdditionalProperties.Type, def.AdditionalProperties.Format = getTypeFormat(mapType.String())
-			if def.AdditionalProperties.Type == "unknown" {
+			def.AdditionalProperties.Type, def.AdditionalProperties.Format, ok = getTypeFormat(mapType.String())
+			if !ok {
+				def.AdditionalProperties.Ref = "#/definitions/" + mapType.String()
 				def.AdditionalProperties.Type = ""
 				def.AdditionalProperties.Format = ""
-				def.AdditionalProperties.Ref = "#/definitions/" + mapType.String()
 			}
 		}
 	case *ast.ArrayType:
@@ -599,28 +600,28 @@ func parseProperties(def *Definition, astType ast.Expr) {
 		case *ast.InterfaceType:
 			def.Items.Type = "any"
 		case *ast.Ident:
-			def.Items.Type, def.Items.Format = getTypeFormat(arrayType.String())
+			def.Items.Type, def.Items.Format, _ = getTypeFormat(arrayType.String())
 		}
 	case *ast.StarExpr:
-		def.Type, def.Format = getTypeFormat(fmt.Sprint(fieldType.X))
-		if def.Type == "unknown" {
+		def.Type, def.Format, ok = getTypeFormat(checkTypePtr(fmt.Sprint(fieldType.X)))
+		if !ok {
+			def.Ref = "#/definitions/" + def.Type
 			def.Type = ""
 			def.Format = ""
-			def.Ref = "#/definitions/" + fmt.Sprint(fieldType.X)
 		}
 	case *ast.SelectorExpr:
-		def.Type, def.Format = getTypeFormat(fieldType.Sel.Name)
-		if def.Type == "unknown" {
+		def.Type, def.Format, ok = getTypeFormat(fieldType.Sel.Name)
+		if !ok {
+			def.Ref = "#/definitions/" + def.Type
 			def.Type = ""
 			def.Format = ""
-			def.Ref = "#/definitions/" + fieldType.Sel.Name
 		}
 	case *ast.Ident:
-		def.Type, def.Format = getTypeFormat(fieldType.String())
-		if def.Type == "unknown" {
+		def.Type, def.Format, ok = getTypeFormat(fieldType.String())
+		if !ok {
+			def.Ref = "#/definitions/" + def.Type
 			def.Type = ""
 			def.Format = ""
-			def.Ref = "#/definitions/" + fieldType.String()
 		}
 	}
 }

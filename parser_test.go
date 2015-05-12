@@ -79,6 +79,18 @@ type Hello9 struct {
 // @GlobalResponse notFound desc="Entity not found." schema.$ref=Witoo
 // @GlobalResponse notFound2 desc="Entity not found." schema.$ref=Jack
 //
+// @Path /attempts
+// @Method GET
+// @Description Get Array of attempts
+// @OperationId GetAttempts
+// @Param $ref=limitQuery
+// @Param $ref=skipQuery
+// @Param $ref=spokenQuery
+// @Param $ref=practiseQuery
+// @Param $ref=userLangQuery
+// @Tags attempts
+// @Response 200 schema.type=array schema.items.$ref=Attempt
+//
 // @Path /user/jack/{id}
 // @Method GET
 // @Param name=id required description="sadsadsad" in=path type=string
@@ -98,5 +110,5 @@ func TestAnnotation(t *testing.T) {
 	parser := NewParser(basePath)
 	b, _ := parser.JSON()
 	pretty.Println(string(b))
-	pretty.Println(swagger.Parameters)
+	pretty.Println(swagger.Definitions)
 }

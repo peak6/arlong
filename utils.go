@@ -117,27 +117,40 @@ func getValueByKey(s string, delim ...rune) map[string]string {
 	return result
 }
 
-func getTypeFormat(val string) (string, string) {
+func checkTypePtr(s string) string {
+	char, _ := utf8.DecodeRuneInString(s)
+	if char == '&' {
+		strs := strings.Split(s, " ")
+		s = strings.TrimSuffix(strs[1], "}")
+	}
+	return s
+}
+
+func getTypeFormat(val string) (string, string, bool) {
 	switch val {
 	case "string":
-		return "string", ""
+		return "string", "", true
 	case "int":
-		return "integer", "int32"
+		return "integer", "int32", true
 	case "int32":
-		return "integer", "int32"
+		return "integer", "int32", true
 	case "int64":
-		return "integer", "int64"
+		return "integer", "int64", true
 	case "float32", "float64":
-		return "number", "float"
+		return "number", "float", true
 	case "bool":
-		return "boolean", ""
-	case "date-time", "time.Time":
-		return "string", "date-time"
+		return "boolean", "", true
+	case "date-time", "time.Time", "Time":
+		return "string", "date-time", true
 	case "date":
-		return "string", "date"
+		return "string", "date", true
+	case "object":
+		return "object", "", true
+	case "array":
+		return "array", "", true
 	}
 
-	return "unknown", ""
+	return val, "", false
 }
 
 func strToInt(val string) int {

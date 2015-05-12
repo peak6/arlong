@@ -155,7 +155,7 @@ type Items struct {
 
 type Responses struct {
 	Ref         string             `json:"$ref,omitempty"`
-	Description string             `json:"description,omitempty"`
+	Description string             `json:"description"`
 	Schema      *Schema            `json:"schema,omitempty"`
 	Headers     map[string]*Header `json:"headers,omitempty"`
 }
