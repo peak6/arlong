@@ -5,16 +5,20 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
 type Parser struct {
+	packages    []*ast.Package
 	basePkgPath string
 	json        []byte
 }
 
 func NewParser(basePkgPath string) *Parser {
 	return &Parser{
+		packages:    []*ast.Package{},
 		basePkgPath: basePkgPath,
 	}
 }
@@ -23,13 +27,12 @@ func (a *Parser) Parse() error {
 	newSwagger()
 	a.json = nil
 
-	packages, err := parsePackages(a.basePkgPath)
-	if err != nil {
+	if err := a.parsePackages(); err != nil {
 		return err
 	}
 
-	parseComments(packages)
-	parseDefinitionModel(packages)
+	parseComments(a.packages)
+	parseDefinitionModel(a.packages)
 
 	return nil
 }
@@ -51,13 +54,25 @@ func (a *Parser) JSON() ([]byte, error) {
 	return a.json, nil
 }
 
-func parsePackages(dir string) (map[string]*ast.Package, error) {
-	fset := token.NewFileSet() // positions are relative to fset
+func (a *Parser) parsePackages() error {
+	return filepath.Walk(a.basePkgPath, func(path string, info os.FileInfo, err error) error {
+		if info.IsDir() {
+			fset := token.NewFileSet()
+			packages, err := parser.ParseDir(fset, path, nil, parser.ParseComments)
+			if err != nil {
+				return err
+			}
 
-	return parser.ParseDir(fset, dir, nil, parser.ParseComments)
+			for _, p := range packages {
+				a.packages = append(a.packages, p)
+			}
+		}
+
+		return nil
+	})
 }
 
-func parseComments(packages map[string]*ast.Package) {
+func parseComments(packages []*ast.Package) {
 	for _, p := range packages {
 		for _, f := range p.Files {
 			for i := 0; i < len(f.Comments); i++ {
@@ -67,7 +82,7 @@ func parseComments(packages map[string]*ast.Package) {
 	}
 }
 
-func parseDefinitionModel(packages map[string]*ast.Package) {
+func parseDefinitionModel(packages []*ast.Package) {
 	for _, astPackage := range packages {
 		for _, astFile := range astPackage.Files {
 			for _, astDeclaration := range astFile.Decls {
@@ -182,7 +197,7 @@ func parseGlobalResponse(comment *ast.Comment) {
 			panic("Invalid @GlobalResponse arguments")
 		}
 
-		tag, respName, vals := data[0], data[1], data[2]
+		tag, respName, vals := strings.TrimSpace(data[0]), strings.TrimSpace(data[1]), strings.TrimSpace(data[2])
 
 		if tag == "@GlobalResponse" {
 			resp := &Responses{}
@@ -200,7 +215,7 @@ func parseParamGlobal(comment *ast.Comment) {
 			panic("Invalid @GlobalParam arguments")
 		}
 
-		tag, paramName, vals := data[0], data[1], data[2]
+		tag, paramName, vals := strings.TrimSpace(data[0]), strings.TrimSpace(data[1]), strings.TrimSpace(data[2])
 
 		if tag == "@GlobalParam" {
 			param := &Parameter{}

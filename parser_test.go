@@ -73,8 +73,8 @@ type Hello9 struct {
 // @TokenUrl http://swagger.io/api/oauth/token
 // @Scopes write:pets="modify pets in your account" read:pets="read your pets"
 //
-// @GlobalParam userParam name=user required description="sadsadsad" in=body schema.$ref=Witoo
-// @GlobalParam userParam2 name=user required description="sadsadsad" in=body schema.$ref=Jack
+// @GlobalParam 	userParam		 name=user		required description="sadsadsad"		in=body schema.$ref=Witoo
+// @GlobalParam 	userParam2		 name=user		required description="sadsadsad"		in=body schema.$ref=Jack
 //
 // @GlobalResponse notFound desc="Entity not found." schema.$ref=Witoo
 // @GlobalResponse notFound2 desc="Entity not found." schema.$ref=Jack
@@ -96,11 +96,7 @@ type Hello9 struct {
 func TestAnnotation(t *testing.T) {
 	basePath := "/Users/witooh/dev/go/src/github.com/plimble/arlong"
 	parser := NewParser(basePath)
-	parser.Parse()
 	b, _ := parser.JSON()
-	parser.Parse()
-	b, _ = parser.JSON()
-	parser.Parse()
-	b, _ = parser.JSON()
 	pretty.Println(string(b))
+	pretty.Println(swagger.Parameters)
 }

@@ -40,13 +40,13 @@ func getValues(text string) (string, string) {
 
 		switch char {
 		case ' ':
-			return fullText[:index], strings.TrimSpace(fullText[index:])
+			return strings.TrimSpace(fullText[:index]), strings.TrimSpace(fullText[index:])
 		default:
 			index += size
 		}
 	}
 
-	return fullText, ""
+	return strings.TrimSpace(fullText), ""
 }
 
 func getValueByKey(s string, delim ...rune) map[string]string {
@@ -68,7 +68,7 @@ func getValueByKey(s string, delim ...rune) map[string]string {
 		s = s[size:]
 
 		switch char {
-		case ' ':
+		case ' ', '\t':
 			if inQuote {
 				index += size
 			} else {
@@ -79,7 +79,7 @@ func getValueByKey(s string, delim ...rune) map[string]string {
 					startKey = index
 				} else {
 					if fullText[startKey:index] != "" {
-						result[fullText[startKey:index]] = ""
+						result[strings.TrimSpace(fullText[startKey:index])] = ""
 						startKey = index
 					}
 					index += size
@@ -91,7 +91,7 @@ func getValueByKey(s string, delim ...rune) map[string]string {
 				index += size
 				startVal = index
 			} else {
-				result[key] = fullText[startVal:index]
+				result[key] = strings.TrimSpace(fullText[startVal:index])
 				inQuote = false
 				key = ""
 				index += size
@@ -150,7 +150,11 @@ func strToInt(val string) int {
 }
 
 func getValueStrings(s string) []string {
-	return strings.Fields(s)
+	fields := strings.Fields(s)
+	for i := 0; i < len(fields); i++ {
+		fields[i] = strings.TrimSpace(fields[i])
+	}
+	return fields
 }
 
 func getValueMapStrings(s string) map[string][]string {
