@@ -654,9 +654,9 @@ func (p *Parser) parseProperties(packName string, def *Definition, astType ast.E
 	}
 }
 
-func (p *Parser) isUsedDefinition(name string) bool {
-	for i := 0; i < len(p.usedDefinitions); i++ {
-		if name == p.usedDefinitions[i] {
+func (p *Parser) isUsedDefinition(name string, defs []string) bool {
+	for i := 0; i < len(defs); i++ {
+		if name == defs[i] {
 			return true
 		}
 	}
@@ -665,6 +665,7 @@ func (p *Parser) isUsedDefinition(name string) bool {
 }
 
 func (p *Parser) mergeCompositeDefinition() {
+	usedMerge := []string{}
 	for defName, def := range swagger.Definitions {
 		if len(def.AllOf) > 0 {
 			newDef := &Definition{
@@ -685,6 +686,8 @@ func (p *Parser) mergeCompositeDefinition() {
 						panic("cannot merged composite struct, cannot found " + refDefName + " definition")
 					}
 
+					usedMerge = append(usedMerge, refDefName)
+
 					for key, val := range swagger.Definitions[refDefName].Properties {
 						newDef.Properties[key] = val
 					}
@@ -695,7 +698,7 @@ func (p *Parser) mergeCompositeDefinition() {
 	}
 
 	for defName, _ := range swagger.Definitions {
-		if !p.isUsedDefinition(defName) {
+		if p.isUsedDefinition(defName, usedMerge) {
 			delete(swagger.Definitions, defName)
 		}
 	}
