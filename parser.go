@@ -102,16 +102,15 @@ func readZone(comments []*ast.Comment) {
 			header := strings.Split(tag, " ")
 
 			switch header[0] {
-			case "@SWAGGER":
+			case "@Swagger":
 				i += parseSwagger(comments[i:])
-			case "@GLOBAL_PARAM":
+			case "@GlobalParam":
 				parseParamGlobal(comments[i : i+1][0])
-			case "@DEFINITIONS":
-			case "@SECURITY_DEFINITION":
+			case "@SecurityDefinition":
 				i += parseSecurityDefinition(comments[i:])
-			case "@GLOBAL_RESPONSE":
+			case "@GlobalResponse":
 				parseGlobalResponse(comments[i : i+1][0])
-			case "@PATH":
+			case "@Path":
 				i += parsePath(comments[i:])
 			}
 		}
@@ -129,13 +128,13 @@ func parseSwagger(comments []*ast.Comment) int {
 		if index > 0 {
 			tag, vals := getValues(comments[i].Text[index:])
 			switch tag {
-			case "@TITLE":
+			case "@Title":
 				swagger.Info.Title = vals
-			case "@DESCRIPTION":
+			case "@Description":
 				swagger.Info.Description = vals
-			case "@TERM":
+			case "@Term":
 				swagger.Info.TermsOfService = vals
-			case "@CONTACT":
+			case "@Contact":
 				if swagger.Info.Contact == nil {
 					swagger.Info.Contact = &Contact{}
 				}
@@ -143,30 +142,30 @@ func parseSwagger(comments []*ast.Comment) int {
 				swagger.Info.Contact.Name = data["name"]
 				swagger.Info.Contact.Email = data["email"]
 				swagger.Info.Contact.URL = data["url"]
-			case "@LICENSE":
+			case "@License":
 				if swagger.Info.License == nil {
 					swagger.Info.License = &License{}
 				}
 				data := getValueByKey(vals)
 				swagger.Info.License.Name = data["name"]
 				swagger.Info.License.URL = data["url"]
-			case "@VERSION":
+			case "@Version":
 				swagger.Info.Version = vals
-			case "@SCHEMES":
+			case "@Schemes":
 				swagger.Schemes = getValueStrings(vals)
-			case "@CONSUMES":
+			case "@Consumes":
 				valsArray := getValueStrings(vals)
 				for i := 0; i < len(valsArray); i++ {
 					valsArray[i] = getMime(valsArray[i])
 				}
 				swagger.Consumes = valsArray
-			case "@PRODUCES":
+			case "@Produces":
 				valsArray := getValueStrings(vals)
 				for i := 0; i < len(valsArray); i++ {
 					valsArray[i] = getMime(valsArray[i])
 				}
 				swagger.Produces = valsArray
-			case "@SECURITY":
+			case "@Security":
 				swagger.Security = append(swagger.Security, getValueMapStrings(vals))
 			}
 		}
@@ -180,12 +179,12 @@ func parseGlobalResponse(comment *ast.Comment) {
 	if index > 0 {
 		data := strings.SplitN(strings.TrimSpace(comment.Text[index:]), " ", 3)
 		if len(data) != 3 {
-			panic("Invalid @GLOBAL_RESPONSE arguments")
+			panic("Invalid @GlobalResponse arguments")
 		}
 
 		tag, respName, vals := data[0], data[1], data[2]
 
-		if tag == "@GLOBAL_RESPONSE" {
+		if tag == "@GlobalResponse" {
 			resp := &Responses{}
 			parseResponse(resp, getValueByKey(vals))
 			swagger.Responses[respName] = resp
@@ -198,12 +197,12 @@ func parseParamGlobal(comment *ast.Comment) {
 	if index > 0 {
 		data := strings.SplitN(strings.TrimSpace(comment.Text[index:]), " ", 3)
 		if len(data) != 3 {
-			panic("Invalid @GLOBAL_PARAM arguments")
+			panic("Invalid @GlobalParam arguments")
 		}
 
 		tag, paramName, vals := data[0], data[1], data[2]
 
-		if tag == "@GLOBAL_PARAM" {
+		if tag == "@GlobalParam" {
 			param := &Parameter{}
 			parseParam(param, getValueByKey(vals))
 			swagger.Parameters[paramName] = param
@@ -223,24 +222,24 @@ func parseSecurityDefinition(comments []*ast.Comment) int {
 		if index > 0 {
 			tag, vals := getValues(comments[i].Text[index:])
 			switch tag {
-			case "@SECURITY_DEFINITION":
+			case "@SecurityDefinition":
 				def = &SecurityDefinitions{}
 				swagger.SecurityDefinitions[vals] = def
-			case "@NAME":
+			case "@Name":
 				def.Name = vals
-			case "@TYPE":
+			case "@Type":
 				def.Type = vals
-			case "@DESCRIPTION":
+			case "@Description":
 				def.Description = vals
-			case "@IN":
+			case "@In":
 				def.In = vals
-			case "@FLOW":
+			case "@Flow":
 				def.Flow = vals
-			case "@AUTHORIZATION_URL":
+			case "@AuthorizationUrl":
 				def.AuthorizationUrl = vals
-			case "@TOKEN_URL":
+			case "@TokenUrl":
 				def.TokenUrl = vals
-			case "@SCOPES":
+			case "@Scopes":
 				def.Scopes = getValueByKey(vals)
 			}
 		}
@@ -262,10 +261,10 @@ func parsePath(comments []*ast.Comment) int {
 		if index > 0 {
 			tag, vals := getValues(comments[i].Text[index:])
 			switch tag {
-			case "@PATH":
+			case "@Path":
 				path = vals
 				swagger.Paths[vals] = &Path{}
-			case "@METHOD":
+			case "@Method":
 				switch vals {
 				case "GET":
 					method = &Operation{}
@@ -288,33 +287,33 @@ func parsePath(comments []*ast.Comment) int {
 				default:
 					panic("Unsupported method")
 				}
-			case "@CONSUMES":
+			case "@Consumes":
 				valsArray := getValueStrings(vals)
 				for i := 0; i < len(valsArray); i++ {
 					valsArray[i] = getMime(valsArray[i])
 				}
 				method.Consumes = valsArray
-			case "@PRODUCES":
+			case "@Produces":
 				valsArray := getValueStrings(vals)
 				for i := 0; i < len(valsArray); i++ {
 					valsArray[i] = getMime(valsArray[i])
 				}
 				method.Produces = valsArray
-			case "@SUMMARY":
+			case "@Summary":
 				method.Summary = vals
-			case "@DESCRIPTION":
+			case "@Description":
 				method.Description = vals
-			case "@DEPRECATED":
+			case "@Deprecated":
 				method.Deprecated = true
-			case "@SCHEMES":
+			case "@Schemes":
 				method.Schemes = getValueStrings(vals)
-			case "@OPERATIONID":
+			case "@OperationId":
 				method.OperationId = vals
-			case "@SECURITY":
+			case "@Security":
 				method.Security = append(method.Security, getValueMapStrings(vals))
-			case "@TAGS":
+			case "@Tags":
 				method.Tags = getValueStrings(vals)
-			case "@PARAM":
+			case "@Param":
 				if method.Parameters == nil {
 					method.Parameters = []*Parameter{}
 				}
@@ -322,14 +321,14 @@ func parsePath(comments []*ast.Comment) int {
 				valArray := getValueByKey(vals)
 				parseParam(param, valArray)
 				method.Parameters = append(method.Parameters, param)
-			case "@RESPONSE":
+			case "@Response":
 				if method.Responses == nil {
 					method.Responses = make(map[string]*Responses)
 				}
 
 				data := strings.SplitN(vals, " ", 2)
 				if len(data) != 2 {
-					panic("Invalid @RESPONSE arguments")
+					panic("Invalid @Response arguments")
 				}
 
 				code, vals := data[0], data[1]
@@ -454,7 +453,7 @@ func parseDefinitionOptions(def *Definition, comments []*ast.Comment) {
 		if index > 0 {
 			tag, vals := getValues(comments[i].Text[index:])
 			switch tag {
-			case "@DESCRIPTION":
+			case "@Description":
 				def.Description = vals
 			}
 		}
@@ -472,7 +471,7 @@ func parsePropertiesName(comments []*ast.Comment) string {
 		if index > 0 {
 			tag, vals := getValues(comments[i].Text[index:])
 			switch tag {
-			case "@NAME":
+			case "@Name":
 				return vals
 			}
 		}
@@ -492,9 +491,9 @@ func parsePropertiesOptions(name string, def *Definition, prop *Definition, comm
 		if index > 0 {
 			tag, vals := getValues(comments[i].Text[index:])
 			switch tag {
-			case "@DESCRIPTION":
+			case "@Description":
 				prop.Description = vals
-			case "@REQUIRED":
+			case "@Required":
 				def.Required = append(def.Required, name)
 			}
 		}

@@ -6,11 +6,11 @@ import (
 )
 
 // @DefinitionModel
-// @DESCRIPTION abcde
+// @Description abcde
 type Hello1 string
 
 // @DefinitionModel
-// @DESCRIPTION 1234
+// @Description 1234
 type Hello2 int
 
 // @DefinitionModel
@@ -30,69 +30,69 @@ type Hello7 *Witoo
 
 // @DefinitionModel
 type Witoo struct {
-	// @DESCRIPTION comment e
-	// @REQUIRED
+	// @Description comment e
+	// @Required
 	Name string
 }
 
 // @DefinitionModel
 type Jack struct {
-	// @NAME ebola1
-	// @DESCRIPTION ssssss
-	// @REQUIRED
+	// @Name ebola1
+	// @Description ssssss
+	// @Required
 	E *Witoo
 
-	// @REQUIRED
+	// @Required
 	A Witoo
 
 	*Witoo
 	test int
 
-	// @NAME -
+	// @Name -
 	private int
 
-	// @REQUIRED
+	// @Required
 	mapping map[string]int
 }
 
-// @SWAGGER
-// @TITLE Api
-// @DESCRIPTION Super api
-// @TERM Dont use
-// @CONTACT name="witoo harianto" url=http://www.plimble.com email=witooh@gmail.com
-// @LICENSE name="Apache 2.0" url=http://google.com
-// @VERSION 1.1.1
-// @SCHEMES http https ws
-// @CONSUMES json xml
-// @PRODUCES json xml
-// @SECURITY petstore_auth=write:pets,read:pets
+// @Swagger
+// @Title Api
+// @Description Super api
+// @Term Dont use
+// @Contact name="witoo harianto" url=http://www.plimble.com email=witooh@gmail.com
+// @License name="Apache 2.0" url=http://google.com
+// @Version 1.1.1
+// @Schemes http https ws
+// @Consumes json xml
+// @Produces json xml
+// @Security petstore_auth=write:pets,read:pets
 //
-// @SECURITY_DEFINITION petstore_auth
-// @TYPE oauth2
-// @FLOW password
-// @TOKEN_URL http://swagger.io/api/oauth/token
-// @SCOPES write:pets="modify pets in your account" read:pets="read your pets"
+// @SecurityDefinition petstore_auth
+// @Type oauth2
+// @Flow password
+// @TokenUrl http://swagger.io/api/oauth/token
+// @Scopes write:pets="modify pets in your account" read:pets="read your pets"
 //
-// @GLOBAL_PARAM userParam name=user required description="sadsadsad" in=body schema.$ref=Witoo
-// @GLOBAL_PARAM userParam2 name=user required description="sadsadsad" in=body schema.$ref=Jack
+// @GlobalParam userParam name=user required description="sadsadsad" in=body schema.$ref=Witoo
+// @GlobalParam userParam2 name=user required description="sadsadsad" in=body schema.$ref=Jack
 //
-// @GLOBAL_RESPONSE notFound desc="Entity not found." schema.$ref=Witoo
-// @GLOBAL_RESPONSE notFound2 desc="Entity not found." schema.$ref=Jack
+// @GlobalResponse notFound desc="Entity not found." schema.$ref=Witoo
+// @GlobalResponse notFound2 desc="Entity not found." schema.$ref=Jack
 //
-// @PATH /user/jack/{id}
-// @METHOD GET
-// @PARAM name=id required description="sadsadsad" in=path type=string
-// @PARAM name=user required description="sadsadsad" in=body schema.$ref=Jack
-// @PRODUCES json
-// @CONSUMES json
-// @SUMMARY this is summary
-// @DESCRIPTION this is description
-// @DEPRECATED
-// @SCHEMES http https
-// @OPERATIONID GetStart
-// @TAGS a b c
-// @SECURITY petstore_auth=write:pets,read:pets
-// @RESPONSE 200 desc=123123 schema.$ref=NotFound
+// @Path /user/jack/{id}
+// @Method GET
+// @Param name=id required description="sadsadsad" in=path type=string
+// @Param name=user required description="sadsadsad" in=body schema.$ref=Jack
+// @Produces json
+// @Consumes json
+// @Summary this is summary
+// @Description this is description
+// @Deprecated
+// @Schemes http https
+// @OperationId GetStart
+// @Tags a b c
+// @Security petstore_auth=write:pets,read:pets
+// @Response 200 desc=123123 schema.$ref=NotFound
 func TestAnnotation(t *testing.T) {
 	basePath := "/Users/witooh/dev/go/src/github.com/plimble/arlong"
 	parser := NewParser(basePath)
