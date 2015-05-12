@@ -28,6 +28,9 @@ func NewParser(basePkgPath string) *Parser {
 
 func (p *Parser) Parse() error {
 	newSwagger()
+	p.usedDefinitions = []string{}
+	p.usedParameters = []string{}
+	p.usedResponses = []string{}
 	p.json = nil
 
 	if err := p.parsePackages(); err != nil {
