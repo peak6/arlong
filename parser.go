@@ -147,6 +147,8 @@ func parseSwagger(comments []*ast.Comment) int {
 				swagger.Info.Title = vals
 			case "@Description":
 				swagger.Info.Description = vals
+			case "@BasePath":
+				swagger.BasePath = vals
 			case "@Term":
 				swagger.Info.TermsOfService = vals
 			case "@Contact":
