@@ -675,13 +675,15 @@ func (p *Parser) mergeCompositeDefinition() {
 					for key, val := range swagger.Definitions[refDefName].Properties {
 						newDef.Properties[key] = val
 					}
-
-					if !p.isUsedDefinition(refDefName) {
-						delete(swagger.Definitions, refDefName)
-					}
 				}
 			}
 			swagger.Definitions[defName] = newDef
+		}
+	}
+
+	for defName, _ := range swagger.Definitions {
+		if !p.isUsedDefinition(defName) {
+			delete(swagger.Definitions, defName)
 		}
 	}
 }
