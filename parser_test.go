@@ -6,29 +6,6 @@ import (
 )
 
 // @DefinitionModel
-// @Description abcde
-type Hello1 string
-
-// @DefinitionModel
-// @Description 1234
-type Hello2 int
-
-// @DefinitionModel
-type Hello3 float64
-
-// @DefinitionModel
-type Hello4 []string
-
-// @DefinitionModel
-type Hello5 map[string]int
-
-// @DefinitionModel
-type Hello6 Hello8
-
-// @DefinitionModel
-type Hello7 *Hello8
-
-// @DefinitionModel
 type Hello8 struct {
 	// @Description comment e
 	// @Required
@@ -37,22 +14,7 @@ type Hello8 struct {
 
 // @DefinitionModel
 type Hello9 struct {
-	// @Name ebola1
-	// @Description ssssss
-	// @Required
-	E *Hello8
-
-	// @Required
-	A Hello8
-
 	*Hello8
-	test int
-
-	// @Name -
-	private int
-
-	// @Required
-	mapping map[string]int
 }
 
 // @Swagger

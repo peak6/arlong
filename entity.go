@@ -161,6 +161,7 @@ type Responses struct {
 }
 
 type Definition struct {
+	AllOf                []*Definition          `json:"allOf,omitempty"`
 	Properties           map[string]*Definition `json:"properties,omitempty"`
 	Required             []string               `json:"required,omitempty"`
 	Type                 string                 `json:"type,omitempty"`

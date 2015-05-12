@@ -521,9 +521,9 @@ func parseDefinition(comments []*ast.Comment, astTypeSpec *ast.TypeSpec) {
 		return
 	}
 
+	compositeDef := []*Definition{}
 	def := &Definition{}
 	parseDefinitionOptions(def, comments)
-	swagger.Definitions[name] = def
 
 	switch astType := astTypeSpec.Type.(type) {
 	default:
@@ -552,7 +552,11 @@ func parseDefinition(comments []*ast.Comment, astTypeSpec *ast.TypeSpec) {
 						propName = astTypeIdent.Name
 					} else if astStarExpr, ok := astField.Type.(*ast.StarExpr); ok {
 						if astIdent, ok := astStarExpr.X.(*ast.Ident); ok {
-							propName = astIdent.Name
+							compositeDef = append(compositeDef, &Definition{
+								Ref: "#/definitions/" + astIdent.Name,
+							})
+							// propName = astIdent.Name
+							continue
 						}
 					} else {
 						panic(fmt.Errorf("Something goes wrong: %#v", astField.Type))
@@ -571,6 +575,15 @@ func parseDefinition(comments []*ast.Comment, astTypeSpec *ast.TypeSpec) {
 			parseProperties(field, astField.Type)
 			def.Properties[propName] = field
 		}
+	}
+
+	if len(compositeDef) > 0 {
+		compositeDef = append(compositeDef, def)
+		swagger.Definitions[name] = &Definition{
+			AllOf: compositeDef,
+		}
+	} else {
+		swagger.Definitions[name] = def
 	}
 }
 
