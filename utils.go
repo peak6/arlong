@@ -121,7 +121,7 @@ func checkTypePtr(s string) string {
 	char, _ := utf8.DecodeRuneInString(s)
 	if char == '&' {
 		strs := strings.Split(s, " ")
-		s = strings.TrimSuffix(strs[1], "}")
+		s = strings.TrimPrefix(strs[0], "&{") + "." + strings.TrimSuffix(strs[1], "}")
 	}
 	return s
 }

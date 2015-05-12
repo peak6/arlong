@@ -34,7 +34,7 @@ type Hello struct {
 // @Title Api
 // @Description Super api
 // @Term Dont use
-// @Contact name="witoo harianto" url=http://www.plimble.com email=witooh@gmail.com
+// @Contact name="John Doe" url=http://www.company.com email=johndoe@company.com
 // @License name="Apache 2.0" url=http://google.com
 // @Version 1.1.1
 // @Schemes http https ws
@@ -48,16 +48,16 @@ type Hello struct {
 // @TokenUrl http://swagger.io/api/oauth/token
 // @Scopes write:pets="modify pets in your account" read:pets="read your pets"
 //
-// @GlobalParam userParam name=user required description="sadsadsad" in=body schema.$ref=Witoo
-// @GlobalParam userParam2 name=user required description="sadsadsad" in=body schema.$ref=Jack
+// @GlobalParam userParam name=user required description="sadsadsad" in=body schema.$ref=package.hello
+// @GlobalParam userParam2 name=user required description="sadsadsad" in=body schema.$ref=package.Data
 //
-// @GlobalResponse notFound desc="Entity not found." schema.$ref=Witoo
-// @GlobalResponse notFound2 desc="Entity not found." schema.$ref=Jack
+// @GlobalResponse notFound desc="Entity not found." schema.$ref=package.hello
+// @GlobalResponse notFound2 desc="Entity not found." schema.$ref=package.Data
 //
-// @Path /user/jack/{id}
+// @Path /user/package.Data/{id}
 // @Method GET
 // @Param name=id required description="sadsadsad" in=path type=string
-// @Param name=user required description="sadsadsad" in=body schema.$ref=Jack
+// @Param name=user required description="sadsadsad" in=body schema.$ref=package.Data
 // @Produces json
 // @Consumes json
 // @Summary this is summary
@@ -67,7 +67,7 @@ type Hello struct {
 // @OperationId GetStart
 // @Tags a b c
 // @Security petstore_auth=write:pets,read:pets
-// @Response 200 desc=123123 schema.$ref=NotFound
+// @Response 200 desc=123123 schema.$ref=package.NotFound
 func main(){
 
 }

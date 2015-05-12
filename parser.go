@@ -13,6 +13,8 @@ import (
 type Parser struct {
 	packages        []*ast.Package
 	usedDefinitions []string
+	usedParameters  []string
+	usedResponses   []string
 	basePkgPath     string
 	json            []byte
 }
@@ -35,6 +37,7 @@ func (p *Parser) Parse() error {
 	p.parseComments()
 	p.parseDefinitionModel()
 	p.mergeCompositeDefinition()
+	p.validate()
 
 	return nil
 }
@@ -94,7 +97,7 @@ func (p *Parser) parseDefinitionModel() {
 							if strings.TrimSpace(strings.TrimPrefix(generalDeclaration.Doc.List[i].Text, "//")) == "@DefinitionModel" {
 								for _, astSpec := range generalDeclaration.Specs {
 									if typeSpec, ok := astSpec.(*ast.TypeSpec); ok {
-										p.parseDefinition(generalDeclaration.Doc.List, typeSpec)
+										p.parseDefinition(astPackage.Name, generalDeclaration.Doc.List, typeSpec)
 									}
 								}
 							}
@@ -370,6 +373,7 @@ func (p *Parser) parseParam(param *Parameter, vals map[string]string) {
 			param.Name = val
 		case key == "$ref":
 			param.Ref = "#/parameters/" + val
+			p.usedParameters = append(p.usedParameters, val)
 		case key == "in":
 			param.In = val
 		case key == "description" || key == "desc":
@@ -452,6 +456,7 @@ func (p *Parser) parseResponse(resp *Responses, vals map[string]string) {
 		switch {
 		case key == "$ref":
 			resp.Ref = "#/responses/" + val
+			p.usedResponses = append(p.usedResponses, val)
 		case key == "description" || key == "desc":
 			resp.Description = val
 		case pathMatch("schema.*", key):
@@ -521,8 +526,8 @@ func (p *Parser) parsePropertiesOptions(name string, def *Definition, prop *Defi
 	}
 }
 
-func (p *Parser) parseDefinition(comments []*ast.Comment, astTypeSpec *ast.TypeSpec) {
-	name := astTypeSpec.Name.String()
+func (p *Parser) parseDefinition(packName string, comments []*ast.Comment, astTypeSpec *ast.TypeSpec) {
+	name := packName + "." + astTypeSpec.Name.String()
 	if _, ok := swagger.Definitions[name]; ok {
 		return
 	}
@@ -533,7 +538,7 @@ func (p *Parser) parseDefinition(comments []*ast.Comment, astTypeSpec *ast.TypeS
 
 	switch astType := astTypeSpec.Type.(type) {
 	default:
-		p.parseProperties(def, astType)
+		p.parseProperties(packName, def, astType)
 	case *ast.StructType:
 		def.Type = "object"
 		def.Properties = make(map[string]*Definition)
@@ -553,10 +558,19 @@ func (p *Parser) parseDefinition(comments []*ast.Comment, astTypeSpec *ast.TypeS
 			if propName == "" {
 				if len(astField.Names) == 0 {
 					if astSelectorExpr, ok := astField.Type.(*ast.SelectorExpr); ok {
-						propName = strings.TrimPrefix(astSelectorExpr.Sel.Name, "*")
+						fieldPackName := astSelectorExpr.X.(*ast.Ident).Name
+						propName = fieldPackName + "." + strings.TrimPrefix(astSelectorExpr.Sel.Name, "*")
 					} else if astTypeIdent, ok := astField.Type.(*ast.Ident); ok {
 						propName = astTypeIdent.Name
 					} else if astStarExpr, ok := astField.Type.(*ast.StarExpr); ok {
+						if astSelectorExpr, ok := astStarExpr.X.(*ast.SelectorExpr); ok {
+							fieldPackName := astSelectorExpr.X.(*ast.Ident).Name
+							compositeDef = append(compositeDef, &Definition{
+								Ref: "#/definitions/" + fieldPackName + "." + strings.TrimPrefix(astSelectorExpr.Sel.Name, "*"),
+							})
+							continue
+						}
+
 						if astIdent, ok := astStarExpr.X.(*ast.Ident); ok {
 							compositeDef = append(compositeDef, &Definition{
 								Ref: "#/definitions/" + astIdent.Name,
@@ -578,7 +592,7 @@ func (p *Parser) parseDefinition(comments []*ast.Comment, astTypeSpec *ast.TypeS
 				p.parsePropertiesOptions(propName, def, field, astField.Doc.List)
 			}
 
-			p.parseProperties(field, astField.Type)
+			p.parseProperties(packName, field, astField.Type)
 			def.Properties[propName] = field
 		}
 	}
@@ -593,25 +607,15 @@ func (p *Parser) parseDefinition(comments []*ast.Comment, astTypeSpec *ast.TypeS
 	}
 }
 
-func (p *Parser) parseProperties(def *Definition, astType ast.Expr) {
+func (p *Parser) parseProperties(packName string, def *Definition, astType ast.Expr) {
 	var ok bool
 	switch fieldType := astType.(type) {
 	case *ast.MapType:
 		def.Type = "object"
 		if def.AdditionalProperties == nil {
-			def.AdditionalProperties = &Schema{}
+			def.AdditionalProperties = &Definition{}
 		}
-		switch mapType := fieldType.Value.(type) {
-		case *ast.InterfaceType:
-			def.AdditionalProperties.Type = "any"
-		case *ast.Ident:
-			def.AdditionalProperties.Type, def.AdditionalProperties.Format, ok = getTypeFormat(mapType.String())
-			if !ok {
-				def.AdditionalProperties.Ref = "#/definitions/" + mapType.String()
-				def.AdditionalProperties.Type = ""
-				def.AdditionalProperties.Format = ""
-			}
-		}
+		p.parseProperties(packName, def.AdditionalProperties, fieldType.Value)
 	case *ast.ArrayType:
 		def.Type = "array"
 		def.Items = &Items{}
@@ -624,21 +628,26 @@ func (p *Parser) parseProperties(def *Definition, astType ast.Expr) {
 	case *ast.StarExpr:
 		def.Type, def.Format, ok = getTypeFormat(checkTypePtr(fmt.Sprint(fieldType.X)))
 		if !ok {
-			def.Ref = "#/definitions/" + def.Type
+			if strings.Contains(def.Type, ".") {
+				def.Ref = "#/definitions/" + def.Type
+			} else {
+				def.Ref = "#/definitions/" + packName + "." + def.Type
+			}
 			def.Type = ""
 			def.Format = ""
 		}
 	case *ast.SelectorExpr:
+		packName = fieldType.X.(*ast.Ident).Name
 		def.Type, def.Format, ok = getTypeFormat(fieldType.Sel.Name)
 		if !ok {
-			def.Ref = "#/definitions/" + def.Type
+			def.Ref = "#/definitions/" + packName + "." + def.Type
 			def.Type = ""
 			def.Format = ""
 		}
 	case *ast.Ident:
 		def.Type, def.Format, ok = getTypeFormat(fieldType.String())
 		if !ok {
-			def.Ref = "#/definitions/" + def.Type
+			def.Ref = "#/definitions/" + packName + "." + def.Type
 			def.Type = ""
 			def.Format = ""
 		}
@@ -672,6 +681,10 @@ func (p *Parser) mergeCompositeDefinition() {
 
 				if def.AllOf[i].Ref != "" {
 					refDefName := strings.TrimPrefix(def.AllOf[i].Ref, "#/definitions/")
+					if _, ok := swagger.Definitions[refDefName]; !ok {
+						panic("cannot merged composite struct, cannot found " + refDefName + " definition")
+					}
+
 					for key, val := range swagger.Definitions[refDefName].Properties {
 						newDef.Properties[key] = val
 					}
@@ -684,6 +697,26 @@ func (p *Parser) mergeCompositeDefinition() {
 	for defName, _ := range swagger.Definitions {
 		if !p.isUsedDefinition(defName) {
 			delete(swagger.Definitions, defName)
+		}
+	}
+}
+
+func (p *Parser) validate() {
+	for _, defName := range p.usedDefinitions {
+		if _, ok := swagger.Definitions[defName]; !ok {
+			panic("cannot found " + defName + " in definitions")
+		}
+	}
+
+	for _, defName := range p.usedParameters {
+		if _, ok := swagger.Parameters[defName]; !ok {
+			panic("cannot found " + defName + " in parameters")
+		}
+	}
+
+	for _, defName := range p.usedResponses {
+		if _, ok := swagger.Responses[defName]; !ok {
+			panic("cannot found " + defName + " in responses")
 		}
 	}
 }

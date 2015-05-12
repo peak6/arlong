@@ -6,6 +6,12 @@ import (
 )
 
 // @DefinitionModel
+type Hello6 map[string]Hello8
+
+// @DefinitionModel
+type Hello7 Hello8
+
+// @DefinitionModel
 type Hello8 struct {
 	// @Description comment e
 	// @Required
@@ -14,7 +20,7 @@ type Hello8 struct {
 
 // @DefinitionModel
 type Hello9 struct {
-	*Hello8
+	c Hello8
 }
 
 // @Swagger
@@ -35,11 +41,11 @@ type Hello9 struct {
 // @TokenUrl http://swagger.io/api/oauth/token
 // @Scopes write:pets="modify pets in your account" read:pets="read your pets"
 //
-// @GlobalParam 	userParam		 name=user		required description="sadsadsad"		in=body schema.$ref=Witoo
-// @GlobalParam 	userParam2		 name=user		required description="sadsadsad"		in=body schema.$ref=Jack
+// @GlobalParam 	userParam		 name=user		required description="sadsadsad"		in=body schema.$ref=arlong.Hello9
+// @GlobalParam 	userParam2		 name=user		required description="sadsadsad"		in=body schema.$ref=arlong.Hello9
 //
-// @GlobalResponse notFound desc="Entity not found." schema.$ref=Witoo
-// @GlobalResponse notFound2 desc="Entity not found." schema.$ref=Jack
+// @GlobalResponse notFound desc="Entity not found." schema.$ref=arlong.Hello9
+// @GlobalResponse notFound2 desc="Entity not found." schema.$ref=arlong.Hello9
 //
 // @Path /attempts
 // @Method GET
@@ -51,12 +57,12 @@ type Hello9 struct {
 // @Param $ref=practiseQuery
 // @Param $ref=userLangQuery
 // @Tags attempts
-// @Response 200 schema.type=array schema.items.$ref=Attempt
+// @Response 200 schema.type=array schema.items.$ref=arlong.Hello9
 //
 // @Path /user/jack/{id}
 // @Method GET
 // @Param name=id required description="sadsadsad" in=path type=string
-// @Param name=user required description="sadsadsad" in=body schema.$ref=Jack
+// @Param name=user required description="sadsadsad" in=body schema.$ref=arlong.Hello9
 // @Produces json
 // @Consumes json
 // @Summary this is summary
@@ -66,7 +72,7 @@ type Hello9 struct {
 // @OperationId GetStart
 // @Tags a b c
 // @Security petstore_auth=write:pets,read:pets
-// @Response 200 desc=123123 schema.$ref=NotFound
+// @Response 200 desc=123123 schema.$ref=arlong.Hello9
 func TestAnnotation(t *testing.T) {
 	basePath := "/Users/witooh/dev/go/src/github.com/plimble/arlong"
 	parser := NewParser(basePath)

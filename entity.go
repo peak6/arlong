@@ -169,7 +169,7 @@ type Definition struct {
 	Description          string                 `json:"description,omitempty"`
 	Items                *Items                 `json:"items,omitempty"`
 	Ref                  string                 `json:"$ref,omitempty"`
-	AdditionalProperties *Schema                `json:"additionalProperties,omitempty"`
+	AdditionalProperties *Definition            `json:"additionalProperties,omitempty"`
 }
 
 type Field struct {
