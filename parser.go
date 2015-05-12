@@ -21,6 +21,7 @@ func NewParser(basePkgPath string) *Parser {
 
 func (a *Parser) Parse() error {
 	newSwagger()
+	a.json = nil
 
 	packages, err := parsePackages(a.basePkgPath)
 	if err != nil {
@@ -76,11 +77,7 @@ func parseDefinitionModel(packages map[string]*ast.Package) {
 							if strings.TrimSpace(strings.TrimPrefix(generalDeclaration.Doc.List[i].Text, "//")) == "@DefinitionModel" {
 								for _, astSpec := range generalDeclaration.Specs {
 									if typeSpec, ok := astSpec.(*ast.TypeSpec); ok {
-										if structType, ok := typeSpec.Type.(*ast.StructType); ok {
-											for i := 0; i < structType.Fields.NumFields(); i++ {
-												parseModel(typeSpec.Name.String(), structType)
-											}
-										}
+										parseDefinition(generalDeclaration.Doc.List, typeSpec)
 									}
 								}
 							}
@@ -446,106 +443,170 @@ func parseResponse(resp *Responses, vals map[string]string) {
 	}
 }
 
-func parseModel(name string, astStruct *ast.StructType) {
+func parseDefinitionOptions(def *Definition, comments []*ast.Comment) {
+	i := 0
+	for ; i < len(comments); i++ {
+		if strings.TrimSpace(comments[i].Text) == "//" {
+			return
+		}
+
+		index := findAt(comments[i].Text)
+		if index > 0 {
+			tag, vals := getValues(comments[i].Text[index:])
+			switch tag {
+			case "@DESCRIPTION":
+				def.Description = vals
+			}
+		}
+	}
+}
+
+func parsePropertiesName(comments []*ast.Comment) string {
+	i := 0
+	for ; i < len(comments); i++ {
+		if strings.TrimSpace(comments[i].Text) == "//" {
+			return ""
+		}
+
+		index := findAt(comments[i].Text)
+		if index > 0 {
+			tag, vals := getValues(comments[i].Text[index:])
+			switch tag {
+			case "@NAME":
+				return vals
+			}
+		}
+	}
+
+	return ""
+}
+
+func parsePropertiesOptions(name string, def *Definition, prop *Definition, comments []*ast.Comment) {
+	i := 0
+	for ; i < len(comments); i++ {
+		if strings.TrimSpace(comments[i].Text) == "//" {
+			return
+		}
+
+		index := findAt(comments[i].Text)
+		if index > 0 {
+			tag, vals := getValues(comments[i].Text[index:])
+			switch tag {
+			case "@DESCRIPTION":
+				prop.Description = vals
+			case "@REQUIRED":
+				def.Required = append(def.Required, name)
+			}
+		}
+	}
+}
+
+func parseDefinition(comments []*ast.Comment, astTypeSpec *ast.TypeSpec) {
+	name := astTypeSpec.Name.String()
 	if _, ok := swagger.Definitions[name]; ok {
 		return
 	}
 
-	def := &Definition{
-		Type:       "object",
-		Properties: make(map[string]*Field),
-	}
-
+	def := &Definition{}
+	parseDefinitionOptions(def, comments)
 	swagger.Definitions[name] = def
 
-	for i := 0; i < astStruct.Fields.NumFields(); i++ {
-		propName := ""
-		astField := astStruct.Fields.List[i]
+	switch astType := astTypeSpec.Type.(type) {
+	default:
+		parseProperties(def, astType)
+	case *ast.StructType:
+		def.Type = "object"
+		def.Properties = make(map[string]*Definition)
 
-		field := &Field{}
-		if astField.Tag != nil {
-			data := getValueByKey(strings.Trim(astField.Tag.Value, "`"), ':')
-			if swaggerData, ok := data["swagger"]; ok {
-				swaggerVals := strings.Split(swaggerData, ",")
-				propName = swaggerVals[0]
-				if propName == "-" {
-					continue
-				}
+		for i := 0; i < astType.Fields.NumFields(); i++ {
+			propName := ""
+			astField := astType.Fields.List[i]
 
-				if len(swaggerVals) == 2 {
-					def.Required = append(def.Required, swaggerVals[0])
-				}
+			if astField.Doc != nil {
+				propName = parsePropertiesName(astField.Doc.List)
 			}
-		}
 
-		if propName == "" {
-			if len(astField.Names) == 0 {
-				if astSelectorExpr, ok := astField.Type.(*ast.SelectorExpr); ok {
-					propName = strings.TrimPrefix(astSelectorExpr.Sel.Name, "*")
-				} else if astTypeIdent, ok := astField.Type.(*ast.Ident); ok {
-					propName = astTypeIdent.Name
-				} else if astStarExpr, ok := astField.Type.(*ast.StarExpr); ok {
-					if astIdent, ok := astStarExpr.X.(*ast.Ident); ok {
-						propName = astIdent.Name
+			if propName == "-" {
+				continue
+			}
+
+			if propName == "" {
+				if len(astField.Names) == 0 {
+					if astSelectorExpr, ok := astField.Type.(*ast.SelectorExpr); ok {
+						propName = strings.TrimPrefix(astSelectorExpr.Sel.Name, "*")
+					} else if astTypeIdent, ok := astField.Type.(*ast.Ident); ok {
+						propName = astTypeIdent.Name
+					} else if astStarExpr, ok := astField.Type.(*ast.StarExpr); ok {
+						if astIdent, ok := astStarExpr.X.(*ast.Ident); ok {
+							propName = astIdent.Name
+						}
+					} else {
+						panic(fmt.Errorf("Something goes wrong: %#v", astField.Type))
 					}
 				} else {
-					panic(fmt.Errorf("Something goes wrong: %#v", astField.Type))
+					propName = astField.Names[0].String()
 				}
-			} else {
-				propName = astField.Names[0].String()
+			}
+
+			field := &Definition{}
+
+			if astField.Doc != nil {
+				parsePropertiesOptions(propName, def, field, astField.Doc.List)
+			}
+
+			parseProperties(field, astField.Type)
+			def.Properties[propName] = field
+		}
+	}
+}
+
+func parseProperties(def *Definition, astType ast.Expr) {
+	switch fieldType := astType.(type) {
+	case *ast.MapType:
+		def.Type = "object"
+		if def.AdditionalProperties == nil {
+			def.AdditionalProperties = &Schema{}
+		}
+		switch mapType := fieldType.Value.(type) {
+		case *ast.InterfaceType:
+			def.AdditionalProperties.Type = "any"
+		case *ast.Ident:
+			def.AdditionalProperties.Type, def.AdditionalProperties.Format = getTypeFormat(mapType.String())
+			if def.AdditionalProperties.Type == "unknown" {
+				def.AdditionalProperties.Type = ""
+				def.AdditionalProperties.Format = ""
+				def.AdditionalProperties.Ref = "#/definitions/" + mapType.String()
 			}
 		}
-
-		field.Description = strings.TrimSpace(strings.Replace(astField.Doc.Text(), "\n", " ", -1))
-		def.Properties[propName] = field
-
-		switch fieldType := astField.Type.(type) {
-		case *ast.MapType:
-			field.Type = "string"
-			if field.AdditionalProperties == nil {
-				field.AdditionalProperties = &Schema{}
-			}
-			switch mapType := fieldType.Value.(type) {
-			case *ast.InterfaceType:
-				field.AdditionalProperties.Type = "any"
-			case *ast.Ident:
-				field.AdditionalProperties.Type, field.AdditionalProperties.Format = getTypeFormat(mapType.String())
-				if field.AdditionalProperties.Type == "unknown" {
-					field.AdditionalProperties.Type = ""
-					field.AdditionalProperties.Format = ""
-					field.AdditionalProperties.Ref = "#/definitions/" + mapType.String()
-				}
-			}
-		case *ast.ArrayType:
-			field.Type = "array"
-			field.Items = &Items{}
-			switch arrayType := fieldType.Elt.(type) {
-			case *ast.InterfaceType:
-				field.Items.Type = "any"
-			case *ast.Ident:
-				field.Items.Type, field.Items.Format = getTypeFormat(arrayType.String())
-			}
-		case *ast.StarExpr:
-			field.Type, field.Format = getTypeFormat(fmt.Sprint(fieldType.X))
-			if field.Type == "unknown" {
-				field.Type = ""
-				field.Format = ""
-				field.Ref = "#/definitions/" + fmt.Sprint(fieldType.X)
-			}
-		case *ast.SelectorExpr:
-			field.Type, field.Format = getTypeFormat(fieldType.Sel.Name)
-			if field.Type == "unknown" {
-				field.Type = ""
-				field.Format = ""
-				field.Ref = "#/definitions/" + fieldType.Sel.Name
-			}
+	case *ast.ArrayType:
+		def.Type = "array"
+		def.Items = &Items{}
+		switch arrayType := fieldType.Elt.(type) {
+		case *ast.InterfaceType:
+			def.Items.Type = "any"
 		case *ast.Ident:
-			field.Type, field.Format = getTypeFormat(fieldType.String())
-			if field.Type == "unknown" {
-				field.Type = ""
-				field.Format = ""
-				field.Ref = "#/definitions/" + fieldType.String()
-			}
+			def.Items.Type, def.Items.Format = getTypeFormat(arrayType.String())
+		}
+	case *ast.StarExpr:
+		def.Type, def.Format = getTypeFormat(fmt.Sprint(fieldType.X))
+		if def.Type == "unknown" {
+			def.Type = ""
+			def.Format = ""
+			def.Ref = "#/definitions/" + fmt.Sprint(fieldType.X)
+		}
+	case *ast.SelectorExpr:
+		def.Type, def.Format = getTypeFormat(fieldType.Sel.Name)
+		if def.Type == "unknown" {
+			def.Type = ""
+			def.Format = ""
+			def.Ref = "#/definitions/" + fieldType.Sel.Name
+		}
+	case *ast.Ident:
+		def.Type, def.Format = getTypeFormat(fieldType.String())
+		if def.Type == "unknown" {
+			def.Type = ""
+			def.Format = ""
+			def.Ref = "#/definitions/" + fieldType.String()
 		}
 	}
 }

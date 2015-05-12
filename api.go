@@ -15,7 +15,7 @@ func createDifinition(tv reflect.Type) {
 	}
 
 	def := &Definition{
-		Properties: make(map[string]*Field),
+		Properties: make(map[string]*Definition),
 	}
 
 	swagger.Definitions[tv.Name()] = def
@@ -32,7 +32,7 @@ func createDifinition(tv reflect.Type) {
 			fieldType = tv.Field(i).Type
 		}
 
-		field := &Field{}
+		field := &Definition{}
 
 		name := structField.Tag.Get("field")
 		names := strings.Split(name, ",")

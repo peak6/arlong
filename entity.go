@@ -161,9 +161,14 @@ type Responses struct {
 }
 
 type Definition struct {
-	Properties map[string]*Field `json:"properties,omitempty"`
-	Required   []string          `json:"required,omitempty"`
-	Type       string            `json:"type,omitempty"`
+	Properties           map[string]*Definition `json:"properties,omitempty"`
+	Required             []string               `json:"required,omitempty"`
+	Type                 string                 `json:"type,omitempty"`
+	Format               string                 `json:"format,omitempty"`
+	Description          string                 `json:"description,omitempty"`
+	Items                *Items                 `json:"items,omitempty"`
+	Ref                  string                 `json:"$ref,omitempty"`
+	AdditionalProperties *Schema                `json:"additionalProperties,omitempty"`
 }
 
 type Field struct {

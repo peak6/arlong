@@ -6,21 +6,52 @@ import (
 )
 
 // @DefinitionModel
+// @DESCRIPTION abcde
+type Hello1 string
+
+// @DefinitionModel
+// @DESCRIPTION 1234
+type Hello2 int
+
+// @DefinitionModel
+type Hello3 float64
+
+// @DefinitionModel
+type Hello4 []string
+
+// @DefinitionModel
+type Hello5 map[string]int
+
+// @DefinitionModel
+type Hello6 Witoo
+
+// @DefinitionModel
+type Hello7 *Witoo
+
+// @DefinitionModel
 type Witoo struct {
-	// comment on E
+	// @DESCRIPTION comment e
+	// @REQUIRED
 	Name string
 }
 
 // @DefinitionModel
 type Jack struct {
-	// description on here
-	// sdfsdf
-	// sdfsdf
-	E *Witoo `json:"jakc,ecom" swagger:"ebola1,required"`
-	A Witoo  `swagger:"ebola2,required"`
+	// @NAME ebola1
+	// @DESCRIPTION ssssss
+	// @REQUIRED
+	E *Witoo
+
+	// @REQUIRED
+	A Witoo
+
 	*Witoo
-	test    int
-	private int `swagger:"-"`
+	test int
+
+	// @NAME -
+	private int
+
+	// @REQUIRED
 	mapping map[string]int
 }
 
@@ -67,5 +98,9 @@ func TestAnnotation(t *testing.T) {
 	parser := NewParser(basePath)
 	parser.Parse()
 	b, _ := parser.JSON()
+	parser.Parse()
+	b, _ = parser.JSON()
+	parser.Parse()
+	b, _ = parser.JSON()
 	pretty.Println(string(b))
 }
