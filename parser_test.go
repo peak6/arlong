@@ -23,29 +23,29 @@ type Hello4 []string
 type Hello5 map[string]int
 
 // @DefinitionModel
-type Hello6 Witoo
+type Hello6 Hello8
 
 // @DefinitionModel
-type Hello7 *Witoo
+type Hello7 *Hello8
 
 // @DefinitionModel
-type Witoo struct {
+type Hello8 struct {
 	// @Description comment e
 	// @Required
 	Name string
 }
 
 // @DefinitionModel
-type Jack struct {
+type Hello9 struct {
 	// @Name ebola1
 	// @Description ssssss
 	// @Required
-	E *Witoo
+	E *Hello8
 
 	// @Required
-	A Witoo
+	A Hello8
 
-	*Witoo
+	*Hello8
 	test int
 
 	// @Name -

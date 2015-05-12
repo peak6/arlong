@@ -3,50 +3,71 @@ Arlong [![godoc badge](http://godoc.org/github.com/plimble/arlong?status.png)](h
 
 Swagger 2.0 Generator
 
+##Install
+```
+go get -u github.com/plimble/arlong/...
+```
+
 ##Example
 ```go
-// @SWAGGER
-// @TITLE Api
-// @DESCRIPTION Super api
-// @TERM Dont use
-// @CONTACT name="witoo harianto" url=http://www.plimble.com email=witooh@gmail.com
-// @LICENSE name="Apache 2.0" url=http://google.com
-// @VERSION 1.1.1
-// @SCHEMES http https ws
-// @CONSUMES json xml
-// @PRODUCES json xml
-// @SECURITY petstore_auth=write:pets,read:pets
+// @DefinitionModel
+type Hello struct {
+  // @Name ebola1
+  // @Description ssssss
+  // @Required
+  E *Hello8
+
+  // @Required
+  A Hello8
+
+  *Hello8
+  test int
+
+  // @Name -
+  private int
+
+  // @Required
+  mapping map[string]int
+}
+
+// @Swagger
+// @Title Api
+// @Description Super api
+// @Term Dont use
+// @Contact name="witoo harianto" url=http://www.plimble.com email=witooh@gmail.com
+// @License name="Apache 2.0" url=http://google.com
+// @Version 1.1.1
+// @Schemes http https ws
+// @Consumes json xml
+// @Produces json xml
+// @Security petstore_auth=write:pets,read:pets
 //
-// @SECURITY_DEFINITION petstore_auth
-// @NAME abc
-// @TYPE oauth2
-// @DESCRIPTION oauth2 security
-// @IN header
-// @FLOW password
-// @AUTHORIZATION_URL http://swagger.io/api/oauth/dialog
-// @TOKEN_URL http://swagger.io/api/oauth/token
-// @SCOPES write:pets="modify pets in your account" read:pets="read your pets"
+// @SecurityDefinition petstore_auth
+// @Type oauth2
+// @Flow password
+// @TokenUrl http://swagger.io/api/oauth/token
+// @Scopes write:pets="modify pets in your account" read:pets="read your pets"
 //
-// @GLOBAL_PARAM userParam name=user required description="sadsadsad" in=body schema.$ref=Parameter
-// @GLOBAL_PARAM userParam2 name=user required description="sadsadsad" in=body schema.$ref=Parameter
+// @GlobalParam userParam name=user required description="sadsadsad" in=body schema.$ref=Witoo
+// @GlobalParam userParam2 name=user required description="sadsadsad" in=body schema.$ref=Jack
 //
-// @GLOBAL_RESPONSE notFound desc="Entity not found." schema.$ref=GeneralError
-// @GLOBAL_RESPONSE notFound2 desc="Entity not found." schema.$ref=GeneralError
+// @GlobalResponse notFound desc="Entity not found." schema.$ref=Witoo
+// @GlobalResponse notFound2 desc="Entity not found." schema.$ref=Jack
 //
-// @PATH /user/jack/{id}
-// @METHOD GET
-// @PARAM name=user required description="sadsadsad" in=body schema.$ref=Parameter
-// @PARAM name=id type=array items.$ref=#/parameters/skip
-// @PRODUCES json
-// @CONSUMES json
-// @SUMMARY this is summary
-// @DESCRIPTION this is description
-// @DEPRECATED
-// @SCHEMES http https
-// @OPERATIONID GetStart
-// @TAGS a b c
-// @SECURITY petstore_auth=write:pets,read:pets
-// @RESPONSE 200 desc=123123 schema.$ref=NotFound
+// @Path /user/jack/{id}
+// @Method GET
+// @Param name=id required description="sadsadsad" in=path type=string
+// @Param name=user required description="sadsadsad" in=body schema.$ref=Jack
+// @Produces json
+// @Consumes json
+// @Summary this is summary
+// @Description this is description
+// @Deprecated
+// @Schemes http https
+// @OperationId GetStart
+// @Tags a b c
+// @Security petstore_auth=write:pets,read:pets
+// @Response 200 desc=123123 schema.$ref=NotFound
 func main(){
 
 }
@@ -58,6 +79,30 @@ func main(){
   a := arlong.NewParser("~/go/src/path/to/package")
   b, err := a.JSON() //generate swagger 2.0 json format
 }
+```
+
+##CLI
+```shell
+NAME:
+   arlong - Genrate Swagger 2.0
+
+USAGE:
+   arlong [global options] command [command options] [arguments...]
+
+VERSION:
+   1.0.0
+
+AUTHOR(S):
+
+COMMANDS:
+   help, h  Shows a list of commands or help for one command
+
+GLOBAL OPTIONS:
+   --path, -p "."   Package path to generate
+   --out, -o "."    Output Path
+   --file, -f "swagger.json"  Output file name
+   --help, -h     show help
+   --version, -v    print the version
 ```
 
 ##Todo
