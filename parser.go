@@ -354,11 +354,15 @@ func (p *Parser) parsePath(comments []*ast.Comment) int {
 				}
 
 				data := strings.SplitN(vals, " ", 2)
-				if len(data) != 2 {
+				if len(data) < 1 {
 					panic("Invalid @Response arguments")
 				}
 
-				code, vals := data[0], data[1]
+				vals = ""
+				code := data[0]
+				if len(data) == 2 {
+					vals = data[1]
+				}
 
 				resp := &Responses{}
 				valArray := getValueByKey(vals)
