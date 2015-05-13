@@ -202,7 +202,8 @@ func (p *Parser) parseSwagger(comments []*ast.Comment) int {
 func (p *Parser) parseGlobalResponse(comment *ast.Comment) {
 	index := findAt(comment.Text)
 	if index > 0 {
-		data := strings.SplitN(strings.TrimSpace(comment.Text[index:]), " ", 3)
+		commentText := strings.Replace(comment.Text[index:], "\t", " ", -1)
+		data := strings.SplitN(commentText, " ", 3)
 		if len(data) != 3 {
 			panic("Invalid @GlobalResponse arguments")
 		}
@@ -220,7 +221,8 @@ func (p *Parser) parseGlobalResponse(comment *ast.Comment) {
 func (p *Parser) parseParamGlobal(comment *ast.Comment) {
 	index := findAt(comment.Text)
 	if index > 0 {
-		data := strings.SplitN(strings.TrimSpace(comment.Text[index:]), " ", 3)
+		commentText := strings.Replace(comment.Text[index:], "\t", " ", -1)
+		data := strings.SplitN(commentText, " ", 3)
 		if len(data) != 3 {
 			panic("Invalid @GlobalParam arguments")
 		}
