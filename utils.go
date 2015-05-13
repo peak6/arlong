@@ -30,6 +30,7 @@ func findAt(text string) int {
 }
 
 func getValues(text string) (string, string) {
+	text = strings.Replace(text, "\t", " ", -1)
 	fullText := text
 	size := 0
 	index := 0

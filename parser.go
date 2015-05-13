@@ -38,7 +38,7 @@ func (p *Parser) Parse() error {
 	}
 
 	p.parseComments()
-	p.parseDefinitionModel()
+	p.parseDefinitionModels()
 	p.mergeCompositeDefinition()
 	p.validate()
 
@@ -90,7 +90,7 @@ func (p *Parser) parseComments() {
 	}
 }
 
-func (p *Parser) parseDefinitionModel() {
+func (p *Parser) parseDefinitionModels() {
 	for _, astPackage := range p.packages {
 		for _, astFile := range astPackage.Files {
 			for _, astDeclaration := range astFile.Decls {
@@ -100,7 +100,7 @@ func (p *Parser) parseDefinitionModel() {
 							if strings.TrimSpace(strings.TrimPrefix(generalDeclaration.Doc.List[i].Text, "//")) == "@DefinitionModel" {
 								for _, astSpec := range generalDeclaration.Specs {
 									if typeSpec, ok := astSpec.(*ast.TypeSpec); ok {
-										p.parseDefinition(astPackage.Name, generalDeclaration.Doc.List, typeSpec)
+										p.parseDefinitionModel(astPackage.Name, generalDeclaration.Doc.List, typeSpec)
 									}
 								}
 							}
@@ -133,6 +133,8 @@ func (p *Parser) readZone(comments []*ast.Comment) {
 				i += p.parseSecurityDefinition(comments[i:])
 			case "@GlobalResponse":
 				p.parseGlobalResponse(comments[i : i+1][0])
+			case "@Definition":
+				p.parseDefinition(comments[i:])
 			case "@Path":
 				i += p.parsePath(comments[i:])
 			}
@@ -377,6 +379,78 @@ func (p *Parser) parsePath(comments []*ast.Comment) int {
 	return i
 }
 
+func (p *Parser) parseDefinition(comments []*ast.Comment) int {
+	i := 0
+	var defName string
+	for ; i < len(comments); i++ {
+		if strings.TrimSpace(comments[i].Text) == "//" {
+			return i
+		}
+
+		index := findAt(comments[i].Text)
+		if index > 0 {
+			tag, vals := getValues(comments[i].Text[index:])
+			switch tag {
+			case "@Definition":
+				defName = vals
+				if swagger.Definitions[defName] == nil {
+					swagger.Definitions[defName] = &Definition{}
+				}
+			case "@Description":
+				swagger.Definitions[defName].Description = vals
+			case "@Property":
+				if swagger.Definitions[defName].Properties == nil {
+					swagger.Definitions[defName].Properties = make(map[string]*Definition)
+				}
+
+				propText := strings.Replace(vals, "\t", " ", -1)
+				data := strings.SplitN(propText, " ", 2)
+				if len(data) != 2 {
+					panic("Invalid @Property arguments")
+				}
+
+				propName, propVals := strings.TrimSpace(data[0]), strings.TrimSpace(data[1])
+				def := &Definition{}
+				valArray := getValueByKey(propVals)
+				p.parseDefinitionField(def, valArray)
+				swagger.Definitions[defName].Properties[propName] = def
+			case "@Type":
+				swagger.Definitions[defName].Type, swagger.Definitions[defName].Format, _ = getTypeFormat(vals)
+			case "@Required":
+				swagger.Definitions[defName].Required = getValueStrings(vals)
+			case "@Items":
+				if swagger.Definitions[defName].Items == nil {
+					swagger.Definitions[defName].Items = &Items{}
+				}
+				data := getValueByKey(vals)
+				for key, val := range data {
+					p.parseItem(swagger.Definitions[defName].Items, key, val)
+				}
+			}
+		}
+	}
+
+	return i
+}
+
+func (p *Parser) parseDefinitionField(def *Definition, vals map[string]string) {
+	for key, val := range vals {
+		switch {
+		case key == "$ref":
+			def.Ref = "#/definitions/" + val
+		case key == "type":
+			def.Type, def.Format, _ = getTypeFormat(val)
+		case key == "description" || key == "desc":
+			def.Description = val
+		case pathMatch("items.*", key):
+			if def.Items == nil {
+				def.Items = &Items{}
+			}
+			p.parseItem(def.Items, strings.TrimPrefix(key, "items."), val)
+		}
+	}
+}
+
 func (p *Parser) parseParam(param *Parameter, vals map[string]string) {
 	for key, val := range vals {
 		switch {
@@ -537,7 +611,7 @@ func (p *Parser) parsePropertiesOptions(name string, def *Definition, prop *Defi
 	}
 }
 
-func (p *Parser) parseDefinition(packName string, comments []*ast.Comment, astTypeSpec *ast.TypeSpec) {
+func (p *Parser) parseDefinitionModel(packName string, comments []*ast.Comment, astTypeSpec *ast.TypeSpec) {
 	name := packName + "." + astTypeSpec.Name.String()
 	if _, ok := swagger.Definitions[name]; ok {
 		return
