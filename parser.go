@@ -341,7 +341,11 @@ func (p *Parser) parsePath(comments []*ast.Comment) int {
 			case "@OperationId":
 				method.OperationId = vals
 			case "@Security":
-				method.Security = append(method.Security, getValueMapStrings(vals))
+				if !strings.Contains(vals, ":") {
+					method.Security = append(method.Security, map[string][]string{vals: []string{}})
+				} else {
+					method.Security = append(method.Security, getValueMapStrings(vals))
+				}
 			case "@Tags":
 				method.Tags = getValueStrings(vals)
 			case "@Param":
