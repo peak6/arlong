@@ -290,7 +290,9 @@ func (p *Parser) parsePath(comments []*ast.Comment) int {
 			switch tag {
 			case "@Path":
 				path = vals
-				swagger.Paths[vals] = &Path{}
+				if swagger.Paths[vals] == nil {
+					swagger.Paths[vals] = &Path{}
+				}
 			case "@Method":
 				switch vals {
 				case "GET":
