@@ -42,7 +42,7 @@ func newSwagger() {
 	swagger = &Swagger{
 		Swagger:             "2.0",
 		Paths:               make(map[string]*Path),
-		Definitions:         make(map[string]*Definition),
+		Definitions:         make(map[string]*Schema),
 		Security:            []map[string][]string{},
 		SecurityDefinitions: make(map[string]*SecurityDefinitions),
 		Parameters:          make(map[string]*Parameter),
@@ -59,7 +59,7 @@ type Swagger struct {
 	Consumes            []string                        `json:"consumes,omitempty"`
 	Produces            []string                        `json:"produces,omitempty"`
 	Paths               map[string]*Path                `json:"paths"`
-	Definitions         map[string]*Definition          `json:"definitions,omitempty"`
+	Definitions         map[string]*Schema              `json:"definitions,omitempty"`
 	Security            []map[string][]string           `json:"security,omitempty"`
 	SecurityDefinitions map[string]*SecurityDefinitions `json:"securityDefinitions,omitempty"`
 	Parameters          map[string]*Parameter           `json:"parameters,omitempty"`
@@ -134,14 +134,19 @@ type Parameter struct {
 }
 
 type Schema struct {
-	Type   string `json:"type,omitempty"`
-	Format string `json:"format,omitempty"`
-	Items  *Items `json:"items,omitempty"`
-	Ref    string `json:"$ref,omitempty"`
+	AllOf                []*Schema          `json:"allOf,omitempty"`
+	Properties           map[string]*Schema `json:"properties,omitempty"`
+	Required             []string           `json:"required,omitempty"`
+	Type                 string             `json:"type,omitempty"`
+	Format               string             `json:"format,omitempty"`
+	Description          string             `json:"description,omitempty"`
+	Items                *Schema            `json:"items,omitempty"`
+	Ref                  string             `json:"$ref,omitempty"`
+	AdditionalProperties *Schema            `json:"additionalProperties,omitempty"`
+	rawRefName           string             `json:"-"`
 }
 
 type Items struct {
-	Ref       string      `json:"$ref,omitempty"`
 	Type      string      `json:"type,omitempty"`
 	Format    string      `json:"format,omitempty"`
 	Default   interface{} `json:"default,omitempty"`
@@ -158,18 +163,6 @@ type Responses struct {
 	Description string             `json:"description"`
 	Schema      *Schema            `json:"schema,omitempty"`
 	Headers     map[string]*Header `json:"headers,omitempty"`
-}
-
-type Definition struct {
-	AllOf                []*Definition          `json:"allOf,omitempty"`
-	Properties           map[string]*Definition `json:"properties,omitempty"`
-	Required             []string               `json:"required,omitempty"`
-	Type                 string                 `json:"type,omitempty"`
-	Format               string                 `json:"format,omitempty"`
-	Description          string                 `json:"description,omitempty"`
-	Items                *Items                 `json:"items,omitempty"`
-	Ref                  string                 `json:"$ref,omitempty"`
-	AdditionalProperties *Definition            `json:"additionalProperties,omitempty"`
 }
 
 type Field struct {

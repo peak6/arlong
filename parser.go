@@ -1,7 +1,7 @@
 package arlong
 
 import (
-	"fmt"
+	"github.com/plimble/utils/parsetype"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -12,7 +12,7 @@ import (
 
 type Parser struct {
 	packages        []*ast.Package
-	usedDefinitions []string
+	usedDefinitions []*Schema
 	usedParameters  []string
 	usedResponses   []string
 	basePkgPath     string
@@ -28,7 +28,7 @@ func NewParser(basePkgPath string) *Parser {
 
 func (p *Parser) Parse() error {
 	newSwagger()
-	p.usedDefinitions = []string{}
+	p.usedDefinitions = []*Schema{}
 	p.usedParameters = []string{}
 	p.usedResponses = []string{}
 	p.json = nil
@@ -39,7 +39,7 @@ func (p *Parser) Parse() error {
 
 	p.parseComments()
 	p.parseDefinitionModels()
-	p.mergeCompositeDefinition()
+	p.mergeAll()
 	p.validate()
 
 	return nil
@@ -91,24 +91,36 @@ func (p *Parser) parseComments() {
 }
 
 func (p *Parser) parseDefinitionModels() {
-	for _, astPackage := range p.packages {
-		for _, astFile := range astPackage.Files {
-			for _, astDeclaration := range astFile.Decls {
-				if generalDeclaration, ok := astDeclaration.(*ast.GenDecl); ok && generalDeclaration.Tok == token.TYPE {
-					if generalDeclaration.Doc != nil {
-						for i := 0; i < len(generalDeclaration.Doc.List); i++ {
-							if strings.TrimSpace(strings.TrimPrefix(generalDeclaration.Doc.List[i].Text, "//")) == "@DefinitionModel" {
-								for _, astSpec := range generalDeclaration.Specs {
-									if typeSpec, ok := astSpec.(*ast.TypeSpec); ok {
-										p.parseDefinitionModel(astPackage.Name, generalDeclaration.Doc.List, typeSpec)
-									}
-								}
-							}
-						}
-					}
-				}
-			}
+	parser := parsetype.NewParser()
+
+	packNames := make(map[string]struct{})
+	for _, val := range p.usedDefinitions {
+		index := strings.LastIndex(val.rawRefName, ".")
+		data := val.rawRefName
+		if index > 0 {
+			data = val.rawRefName[:index]
 		}
+
+		packNames[data] = struct{}{}
+	}
+
+	for key := range packNames {
+		parser.ParseFromGoPath(key)
+	}
+
+	parser.MergeComposite()
+
+	for _, val := range p.usedDefinitions {
+		def := &Schema{}
+		pType := parser.Types[val.rawRefName]
+
+		if pType.Doc != nil {
+			p.parseDefinitionOptions(def, pType.Doc.List)
+		}
+		p.parseDefinitionModel(def, pType)
+
+		keyName := val.rawRefName
+		swagger.Definitions[keyName] = def
 	}
 }
 
@@ -398,13 +410,13 @@ func (p *Parser) parseDefinition(comments []*ast.Comment) int {
 			case "@Definition":
 				defName = vals
 				if swagger.Definitions[defName] == nil {
-					swagger.Definitions[defName] = &Definition{}
+					swagger.Definitions[defName] = &Schema{}
 				}
 			case "@Description":
 				swagger.Definitions[defName].Description = vals
 			case "@Property":
 				if swagger.Definitions[defName].Properties == nil {
-					swagger.Definitions[defName].Properties = make(map[string]*Definition)
+					swagger.Definitions[defName].Properties = make(map[string]*Schema)
 				}
 
 				propText := strings.Replace(vals, "\t", " ", -1)
@@ -414,7 +426,7 @@ func (p *Parser) parseDefinition(comments []*ast.Comment) int {
 				}
 
 				propName, propVals := strings.TrimSpace(data[0]), strings.TrimSpace(data[1])
-				def := &Definition{}
+				def := &Schema{}
 				valArray := getValueByKey(propVals)
 				p.parseDefinitionField(def, valArray)
 				swagger.Definitions[defName].Properties[propName] = def
@@ -424,11 +436,11 @@ func (p *Parser) parseDefinition(comments []*ast.Comment) int {
 				swagger.Definitions[defName].Required = getValueStrings(vals)
 			case "@Items":
 				if swagger.Definitions[defName].Items == nil {
-					swagger.Definitions[defName].Items = &Items{}
+					swagger.Definitions[defName].Items = &Schema{}
 				}
 				data := getValueByKey(vals)
 				for key, val := range data {
-					p.parseItem(swagger.Definitions[defName].Items, key, val)
+					p.parseSchema(swagger.Definitions[defName].Items, key, val)
 				}
 			}
 		}
@@ -437,7 +449,7 @@ func (p *Parser) parseDefinition(comments []*ast.Comment) int {
 	return i
 }
 
-func (p *Parser) parseDefinitionField(def *Definition, vals map[string]string) {
+func (p *Parser) parseDefinitionField(def *Schema, vals map[string]string) {
 	for key, val := range vals {
 		switch {
 		case key == "$ref":
@@ -448,9 +460,9 @@ func (p *Parser) parseDefinitionField(def *Definition, vals map[string]string) {
 			def.Description = val
 		case pathMatch("items.*", key):
 			if def.Items == nil {
-				def.Items = &Items{}
+				def.Items = &Schema{}
 			}
-			p.parseItem(def.Items, strings.TrimPrefix(key, "items."), val)
+			p.parseSchema(def.Items, strings.TrimPrefix(key, "items."), val)
 		}
 	}
 }
@@ -507,20 +519,21 @@ func (p *Parser) parseSchema(s *Schema, key, val string) {
 		s.Type, s.Format, _ = getTypeFormat(val)
 	case key == "$ref":
 		s.Ref = "#/definitions/" + val
-		p.usedDefinitions = append(p.usedDefinitions, val)
+		s.rawRefName = val
+		p.usedDefinitions = append(p.usedDefinitions, s)
 	case pathMatch("items.*", key):
 		if s.Items == nil {
-			s.Items = &Items{}
+			s.Items = &Schema{}
 		}
-		p.parseItem(s.Items, strings.TrimPrefix(key, "items."), val)
+		p.parseSchema(s.Items, strings.TrimPrefix(key, "items."), val)
 	}
 }
 
 func (p *Parser) parseItem(item *Items, key, val string) {
 	switch {
-	case key == "$ref":
-		item.Ref = "#/definitions/" + val
-		p.usedDefinitions = append(p.usedDefinitions, val)
+	// case key == "$ref":
+	// 	item.Ref = "#/definitions/" + val
+	// 	p.usedDefinitions[val] = struct{}{}
 	case key == "type":
 		item.Type, item.Format, _ = getTypeFormat(val)
 	case key == "default":
@@ -557,7 +570,7 @@ func (p *Parser) parseResponse(resp *Responses, vals map[string]string) {
 	}
 }
 
-func (p *Parser) parseDefinitionOptions(def *Definition, comments []*ast.Comment) {
+func (p *Parser) parseDefinitionOptions(def *Schema, comments []*ast.Comment) {
 	i := 0
 	for ; i < len(comments); i++ {
 		if strings.TrimSpace(comments[i].Text) == "//" {
@@ -595,7 +608,7 @@ func (p *Parser) parsePropertiesName(comments []*ast.Comment) string {
 	return ""
 }
 
-func (p *Parser) parsePropertiesOptions(name string, def *Definition, prop *Definition, comments []*ast.Comment) {
+func (p *Parser) parsePropertiesOptions(name string, def *Schema, prop *Schema, comments []*ast.Comment) {
 	i := 0
 	for ; i < len(comments); i++ {
 		if strings.TrimSpace(comments[i].Text) == "//" {
@@ -615,191 +628,63 @@ func (p *Parser) parsePropertiesOptions(name string, def *Definition, prop *Defi
 	}
 }
 
-func (p *Parser) parseDefinitionModel(packName string, comments []*ast.Comment, astTypeSpec *ast.TypeSpec) {
-	name := packName + "." + astTypeSpec.Name.String()
-	if _, ok := swagger.Definitions[name]; ok {
-		return
-	}
+func (p *Parser) parseDefinitionModel(def *Schema, pType *parsetype.Type) {
+	switch pType.Type {
+	case "ref":
+		if pType.RefType != nil {
+			p.parseDefinitionModel(def, pType.RefType)
+			// def.Ref = "#/definitions/" + pType.RefType.Name
+			// if _, ok := swagger.Definitions[pType.RefType.Name]; !ok {
+			// 	swagger.Definitions[pType.RefType.Name] = &Schema{}
+			// 	p.parseDefinitionModel(swagger.Definitions[pType.RefType.Name], pType.RefType)
+			// }
+		}
+	case "struct":
+		def.Properties = make(map[string]*Schema)
+		for key, val := range pType.Properties {
+			propDef := &Schema{}
 
-	compositeDef := []*Definition{}
-	def := &Definition{}
-	p.parseDefinitionOptions(def, comments)
+			name := ""
+			nameDoc := ""
 
-	switch astType := astTypeSpec.Type.(type) {
-	default:
-		p.parseProperties(packName, def, astType)
-	case *ast.StructType:
-		def.Type = "object"
-		def.Properties = make(map[string]*Definition)
-
-		for i := 0; i < astType.Fields.NumFields(); i++ {
-			propName := ""
-			astField := astType.Fields.List[i]
-
-			if astField.Doc != nil {
-				propName = p.parsePropertiesName(astField.Doc.List)
+			if val.Doc != nil {
+				nameDoc = p.parsePropertiesName(val.Doc.List)
 			}
 
-			if propName == "-" {
-				continue
-			}
-
-			if propName == "" {
-				if len(astField.Names) == 0 {
-					if astSelectorExpr, ok := astField.Type.(*ast.SelectorExpr); ok {
-						fieldPackName := astSelectorExpr.X.(*ast.Ident).Name
-						propName = fieldPackName + "." + strings.TrimPrefix(astSelectorExpr.Sel.Name, "*")
-					} else if astTypeIdent, ok := astField.Type.(*ast.Ident); ok {
-						propName = astTypeIdent.Name
-					} else if astStarExpr, ok := astField.Type.(*ast.StarExpr); ok {
-						if astSelectorExpr, ok := astStarExpr.X.(*ast.SelectorExpr); ok {
-							fieldPackName := astSelectorExpr.X.(*ast.Ident).Name
-							compositeDef = append(compositeDef, &Definition{
-								Ref: "#/definitions/" + fieldPackName + "." + strings.TrimPrefix(astSelectorExpr.Sel.Name, "*"),
-							})
-							continue
-						}
-
-						if astIdent, ok := astStarExpr.X.(*ast.Ident); ok {
-							compositeDef = append(compositeDef, &Definition{
-								Ref: "#/definitions/" + packName + "." + astIdent.Name,
-							})
-							// propName = astIdent.Name
-							continue
-						}
-					} else {
-						panic(fmt.Errorf("Something goes wrong: %#v", astField.Type))
-					}
-				} else {
-					propName = astField.Names[0].String()
+			if val.Tags != "" && val.Tags.Get(`json`) != "" {
+				jsonData := strings.Split(val.Tags.Get(`json`), ",")
+				if jsonData[0] == "-" || jsonData[0] == "" {
+					continue
 				}
-			}
-
-			field := &Definition{}
-
-			if astField.Doc != nil {
-				p.parsePropertiesOptions(propName, def, field, astField.Doc.List)
-			}
-
-			p.parseProperties(packName, field, astField.Type)
-			def.Properties[propName] = field
-		}
-	}
-
-	if len(compositeDef) > 0 {
-		compositeDef = append(compositeDef, def)
-		swagger.Definitions[name] = &Definition{
-			AllOf: compositeDef,
-		}
-	} else {
-		swagger.Definitions[name] = def
-	}
-}
-
-func (p *Parser) parseProperties(packName string, def *Definition, astType ast.Expr) {
-	var ok bool
-	switch fieldType := astType.(type) {
-	case *ast.MapType:
-		def.Type = "object"
-		if def.AdditionalProperties == nil {
-			def.AdditionalProperties = &Definition{}
-		}
-		p.parseProperties(packName, def.AdditionalProperties, fieldType.Value)
-	case *ast.ArrayType:
-		def.Type = "array"
-		def.Items = &Items{}
-		switch arrayType := fieldType.Elt.(type) {
-		case *ast.InterfaceType:
-			def.Items.Type = "any"
-		case *ast.Ident:
-			def.Items.Type, def.Items.Format, _ = getTypeFormat(arrayType.String())
-		}
-	case *ast.StarExpr:
-		def.Type, def.Format, ok = getTypeFormat(checkTypePtr(fmt.Sprint(fieldType.X)))
-		if !ok {
-			if strings.Contains(def.Type, ".") {
-				def.Ref = "#/definitions/" + def.Type
+				name = jsonData[0]
+			} else if nameDoc != "" {
+				name = nameDoc
 			} else {
-				def.Ref = "#/definitions/" + packName + "." + def.Type
-			}
-			def.Type = ""
-			def.Format = ""
-		}
-	case *ast.SelectorExpr:
-		packName = fieldType.X.(*ast.Ident).Name
-		def.Type, def.Format, ok = getTypeFormat(fieldType.Sel.Name)
-		if !ok {
-			def.Ref = "#/definitions/" + packName + "." + def.Type
-			def.Type = ""
-			def.Format = ""
-		}
-	case *ast.Ident:
-		def.Type, def.Format, ok = getTypeFormat(fieldType.String())
-		if !ok {
-			def.Ref = "#/definitions/" + packName + "." + def.Type
-			def.Type = ""
-			def.Format = ""
-		}
-	}
-}
-
-func (p *Parser) isUsedDefinition(name string, defs []string) bool {
-	for i := 0; i < len(defs); i++ {
-		if name == defs[i] {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (p *Parser) mergeCompositeDefinition() {
-	usedMerge := []string{}
-	for defName, def := range swagger.Definitions {
-		if len(def.AllOf) > 0 {
-			newDef := &Definition{
-				Properties: make(map[string]*Definition),
+				name = key
 			}
 
-			for i := 0; i < len(def.AllOf); i++ {
-				if len(def.AllOf[i].Properties) != 0 {
-					newDef.Description = def.Description
-					for key, val := range def.AllOf[i].Properties {
-						newDef.Properties[key] = val
-					}
-				}
-
-				if def.AllOf[i].Ref != "" {
-					refDefName := strings.TrimPrefix(def.AllOf[i].Ref, "#/definitions/")
-					if _, ok := swagger.Definitions[refDefName]; !ok {
-						panic("cannot merged composite struct, cannot found " + refDefName + " definition")
-					}
-
-					usedMerge = append(usedMerge, refDefName)
-
-					for key, val := range swagger.Definitions[refDefName].Properties {
-						newDef.Properties[key] = val
-					}
-				}
+			if val.Doc != nil {
+				p.parsePropertiesOptions(name, def, propDef, val.Doc.List)
 			}
-			swagger.Definitions[defName] = newDef
-		}
-	}
 
-	for defName, _ := range swagger.Definitions {
-		if p.isUsedDefinition(defName, usedMerge) {
-			delete(swagger.Definitions, defName)
+			def.Properties[name] = propDef
+			p.parseDefinitionModel(propDef, val)
 		}
+	case "map":
+		def.Type = "object"
+		def.AdditionalProperties = &Schema{}
+
+		p.parseDefinitionModel(def.AdditionalProperties, pType.MapType)
+	case "array":
+		def.Type = "array"
+		def.Items = &Schema{}
+		p.parseDefinitionModel(def.Items, pType.ArrayType)
+	default:
+		def.Type, def.Format, _ = getTypeFormat(pType.Type)
 	}
 }
 
 func (p *Parser) validate() {
-	for _, defName := range p.usedDefinitions {
-		if _, ok := swagger.Definitions[defName]; !ok {
-			panic("cannot found " + defName + " in definitions")
-		}
-	}
-
 	for _, defName := range p.usedParameters {
 		if _, ok := swagger.Parameters[defName]; !ok {
 			panic("cannot found " + defName + " in parameters")
@@ -811,4 +696,20 @@ func (p *Parser) validate() {
 			panic("cannot found " + defName + " in responses")
 		}
 	}
+}
+
+func (p *Parser) mergeAll() {
+	for _, val := range p.usedDefinitions {
+		cloneSchema := swagger.Definitions[val.rawRefName]
+		val.Ref = cloneSchema.Ref
+		val.AdditionalProperties = cloneSchema.AdditionalProperties
+		val.AllOf = cloneSchema.AllOf
+		val.Description = cloneSchema.Description
+		val.Format = cloneSchema.Format
+		val.Items = cloneSchema.Items
+		val.Properties = cloneSchema.Properties
+		val.Required = cloneSchema.Required
+		val.Type = cloneSchema.Type
+	}
+	swagger.Definitions = nil
 }

@@ -141,7 +141,7 @@ func getTypeFormat(val string) (string, string, bool) {
 		return "number", "float", true
 	case "bool":
 		return "boolean", "", true
-	case "date-time", "time.Time", "Time":
+	case "date-time", "time.Time", "Time", "time":
 		return "string", "date-time", true
 	case "date":
 		return "string", "date", true
