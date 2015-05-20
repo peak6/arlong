@@ -39,7 +39,7 @@ func (p *Parser) Parse() error {
 
 	p.parseComments()
 	p.parseDefinitionModels()
-	p.mergeAll()
+	// p.mergeAll()
 	p.validate()
 
 	return nil
@@ -632,12 +632,12 @@ func (p *Parser) parseDefinitionModel(def *Schema, pType *parsetype.Type) {
 	switch pType.Type {
 	case "ref":
 		if pType.RefType != nil {
-			p.parseDefinitionModel(def, pType.RefType)
-			// def.Ref = "#/definitions/" + pType.RefType.Name
-			// if _, ok := swagger.Definitions[pType.RefType.Name]; !ok {
-			// 	swagger.Definitions[pType.RefType.Name] = &Schema{}
-			// 	p.parseDefinitionModel(swagger.Definitions[pType.RefType.Name], pType.RefType)
-			// }
+			// p.parseDefinitionModel(def, pType.RefType)
+			def.Ref = "#/definitions/" + pType.RefType.Name
+			if _, ok := swagger.Definitions[pType.RefType.Name]; !ok {
+				swagger.Definitions[pType.RefType.Name] = &Schema{}
+				p.parseDefinitionModel(swagger.Definitions[pType.RefType.Name], pType.RefType)
+			}
 		}
 	case "struct":
 		def.Properties = make(map[string]*Schema)
