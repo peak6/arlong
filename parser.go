@@ -632,11 +632,16 @@ func (p *Parser) parseDefinitionModel(def *Schema, pType *parsetype.Type) {
 	switch pType.Type {
 	case "ref":
 		if pType.RefType != nil {
-			// p.parseDefinitionModel(def, pType.RefType)
-			def.Ref = "#/definitions/" + pType.RefType.Name
-			if _, ok := swagger.Definitions[pType.RefType.Name]; !ok {
-				swagger.Definitions[pType.RefType.Name] = &Schema{}
-				p.parseDefinitionModel(swagger.Definitions[pType.RefType.Name], pType.RefType)
+			switch pType.RefType.Type {
+			case "struct", "ref":
+				// p.parseDefinitionModel(def, pType.RefType)
+				def.Ref = "#/definitions/" + pType.RefType.Name
+				if _, ok := swagger.Definitions[pType.RefType.Name]; !ok {
+					swagger.Definitions[pType.RefType.Name] = &Schema{}
+					p.parseDefinitionModel(swagger.Definitions[pType.RefType.Name], pType.RefType)
+				}
+			default:
+				def.Type, def.Format, _ = getTypeFormat(pType.RefType.Type)
 			}
 		}
 	case "struct":
