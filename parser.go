@@ -1,6 +1,7 @@
 package arlong
 
 import (
+	"github.com/Sirupsen/logrus"
 	"github.com/plimble/utils/parsetype"
 	"go/ast"
 	"go/parser"
@@ -112,6 +113,12 @@ func (p *Parser) parseDefinitionModels() {
 
 	for _, val := range p.usedDefinitions {
 		def := &Schema{}
+
+		if _, ok := parser.Types[val.rawRefName]; !ok {
+			logrus.Errorf("Could not find %s package", val.rawRefName)
+			continue
+		}
+
 		pType := parser.Types[val.rawRefName]
 
 		if pType.Doc != nil {
