@@ -1,0 +1,1490 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Langfight",
+    "description": "Langfight API",
+    "license": {
+      "name": "BSD",
+      "url": "http://opensource.org/licenses/BSD-2-Clause"
+    },
+    "version": "1.0.0"
+  },
+  "basePath": "/",
+  "schemes": [
+    "http"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/attempts": {
+      "get": {
+        "tags": [
+          "attempts"
+        ],
+        "description": "Get all published attempts.",
+        "operationId": "GetAttempts",
+        "parameters": [
+          {
+            "$ref": "#/parameters/limitQuery"
+          },
+          {
+            "$ref": "#/parameters/skipQuery"
+          },
+          {
+            "$ref": "#/parameters/spokenQuery"
+          },
+          {
+            "$ref": "#/parameters/practiceQuery"
+          },
+          {
+            "$ref": "#/parameters/userLangQuery"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/models.Attempt"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/attempts/{id}": {
+      "get": {
+        "tags": [
+          "attempts"
+        ],
+        "description": "Get specific attempt.",
+        "operationId": "GetAttempt",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "User Id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/models.Attempt"
+            }
+          }
+        }
+      }
+    },
+    "/attempts/{id}/comments": {
+      "get": {
+        "tags": [
+          "comment"
+        ],
+        "description": "Get all comments on an attempt.",
+        "operationId": "GetCommentsByAttemptID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Attempt id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/models.Comment"
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "comment"
+        ],
+        "description": "Publish new comment on an attempt.",
+        "operationId": "PutComment",
+        "consumes": [
+          "application/x-www-form-urlencoded"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Attempt id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "Id",
+            "in": "formData",
+            "description": "Comment id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "UserId",
+            "in": "formData",
+            "description": "User id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/framework.Success"
+            }
+          }
+        }
+      }
+    },
+    "/attempts/{id}/ratings": {
+      "get": {
+        "tags": [
+          "rating"
+        ],
+        "description": "Get attempt's ratings summary.",
+        "operationId": "GetRatingSummaryByAttemptID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Attempt Id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/models.RatingSummary"
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "rating"
+        ],
+        "description": "Publish an attempt's rating.",
+        "operationId": "PutRating",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Attempt Id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "UserId",
+            "in": "formData",
+            "description": "User id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "Score",
+            "in": "formData",
+            "description": "Score",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/framework.Success"
+            }
+          }
+        }
+      }
+    },
+    "/entries": {
+      "get": {
+        "tags": [
+          "entries"
+        ],
+        "description": "Get all entries in the system.",
+        "operationId": "GetEntries",
+        "parameters": [
+          {
+            "$ref": "#/parameters/limitQuery"
+          },
+          {
+            "$ref": "#/parameters/skipQuery"
+          },
+          {
+            "$ref": "#/parameters/spokenQuery"
+          },
+          {
+            "$ref": "#/parameters/practiceQuery"
+          },
+          {
+            "$ref": "#/parameters/userLangQuery"
+          },
+          {
+            "$ref": "#/parameters/bunndleQuery"
+          },
+          {
+            "$ref": "#/parameters/versionCodeQuery"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/models.Entry"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/entries/{id}": {
+      "get": {
+        "tags": [
+          "entries"
+        ],
+        "description": "Get specific entry.",
+        "operationId": "GetEntry",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Entry Id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/models.Entry"
+            }
+          }
+        }
+      }
+    },
+    "/subtitles/entry/{id}": {
+      "get": {
+        "tags": [
+          "subtitle"
+        ],
+        "description": "Get subtitle by entry id",
+        "operationId": "GetSubtitleByEntryID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Entry Id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/models.Subtitle"
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "subtitle"
+        ],
+        "description": "Save subtitle by entry id",
+        "operationId": "SaveSubtitleByEntryID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Entry Id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "SpokenText",
+            "in": "formData",
+            "description": "SpokenText",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "TranslationText",
+            "in": "formData",
+            "description": "TranslationText",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "SpokenLang",
+            "in": "formData",
+            "description": "SpokenLang",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "TranslationLang",
+            "in": "formData",
+            "description": "TranslationLang",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/framework.Success"
+            }
+          }
+        }
+      }
+    },
+    "/tags": {
+      "get": {
+        "tags": [
+          "tag"
+        ],
+        "description": "Get all tags.",
+        "operationId": "GetTags",
+        "parameters": [
+          {
+            "$ref": "#/parameters/limitQuery"
+          },
+          {
+            "$ref": "#/parameters/skipQuery"
+          },
+          {
+            "$ref": "#/parameters/spokenQuery"
+          },
+          {
+            "$ref": "#/parameters/practiceQuery"
+          },
+          {
+            "$ref": "#/parameters/userLangQuery"
+          },
+          {
+            "$ref": "#/parameters/bunndleQuery"
+          },
+          {
+            "$ref": "#/parameters/versionCodeQuery"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/models.Tag"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tags/{id}/entries": {
+      "get": {
+        "tags": [
+          "entries"
+        ],
+        "description": "Get entries with the given tag.",
+        "operationId": "GetEntriesByTagID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Tag Id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "$ref": "#/parameters/limitQuery"
+          },
+          {
+            "$ref": "#/parameters/skipQuery"
+          },
+          {
+            "$ref": "#/parameters/bunndleQuery"
+          },
+          {
+            "$ref": "#/parameters/versionCodeQuery"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/models.Entry"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users": {
+      "put": {
+        "tags": [
+          "user"
+        ],
+        "description": "Register a new user.",
+        "operationId": "PutUser",
+        "parameters": [
+          {
+            "name": "Username",
+            "in": "formData",
+            "description": "Username",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "CognitoId",
+            "in": "formData",
+            "description": "CognitoId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/framework.Success"
+            }
+          }
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "description": "Get specific user's info.",
+        "operationId": "GetUser",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "User Id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/models.User"
+            }
+          }
+        }
+      }
+    },
+    "/users/{id}/activities": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "description": "Get user's activities.",
+        "operationId": "GetActivitiesByUserID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "User Id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/github.com/hyperworks/go-getstream.Activity"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      }
+    },
+    "/users/{id}/attempts": {
+      "get": {
+        "tags": [
+          "attempts"
+        ],
+        "description": "Get user's list of attempts.",
+        "operationId": "GetAttemptsByUserID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "User Id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/models.Attempt"
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "attempts"
+        ],
+        "description": "Publish user's attempt.",
+        "operationId": "PutAttempt",
+        "consumes": [
+          "application/x-www-form-urlencoded"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "User Id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "Id",
+            "in": "formData",
+            "description": "Attempts id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "UserId",
+            "in": "formData",
+            "description": "User id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "EntryId",
+            "in": "formData",
+            "description": "Entry id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/framework.Success"
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      }
+    },
+    "/users/{id}/comments": {
+      "get": {
+        "tags": [
+          "comment"
+        ],
+        "description": "Get comments made by the user.",
+        "operationId": "GetCommentsByUserID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "User Id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/models.Comment"
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      }
+    },
+    "/users/{id}/comments_received": {
+      "get": {
+        "tags": [
+          "comment"
+        ],
+        "description": "Get user's received comments.",
+        "operationId": "GetReceivedCommentsByUserID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "User Id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/models.Comment"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      }
+    },
+    "/users/{id}/devices": {
+      "put": {
+        "tags": [
+          "devices"
+        ],
+        "description": "Registers a mobile device token.",
+        "operationId": "RegisterDeviceToken",
+        "consumes": [
+          "application/x-www-form-urlencoded"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "User id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "Token",
+            "in": "formData",
+            "description": "Token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "Type",
+            "in": "formData",
+            "description": "Type",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/framework.Success"
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      }
+    },
+    "/users/{id}/entries": {
+      "get": {
+        "tags": [
+          "entries"
+        ],
+        "description": "Get user's saved entries.",
+        "operationId": "GetEntriesByUserID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "User Id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/models.Entry"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "entries"
+        ],
+        "description": "Save new user's entry.",
+        "operationId": "PutUserEntry",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "User Id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "Id",
+            "in": "formData",
+            "description": "Entry id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "SpokenText",
+            "in": "formData",
+            "description": "SpokenText",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "SpokenLang",
+            "in": "formData",
+            "description": "SpokenLang",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "PronunciationText",
+            "in": "formData",
+            "description": "PronunciationText",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "PronunciationLang",
+            "in": "formData",
+            "description": "PronunciationLang",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "Translation",
+            "in": "formData",
+            "description": "Translation",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/framework.Success"
+            }
+          }
+        }
+      }
+    },
+    "/users/{id}/points": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "description": "Get user's total points.",
+        "operationId": "GetPointsByUserID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "User Id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/models.CreditResult"
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      }
+    },
+    "/users/{id}/settings": {
+      "get": {
+        "tags": [
+          "settings"
+        ],
+        "description": "Get user's settings.",
+        "operationId": "GetSettingsByUserID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "User Id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/models.Settings"
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "settings"
+        ],
+        "description": "Save user's settings.",
+        "operationId": "PutSettings",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "User Id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "AppLanguage",
+            "in": "formData",
+            "description": "AppLanguage",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "LearningLanguage",
+            "in": "formData",
+            "description": "LearningLanguage",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "AutoPlay",
+            "in": "formData",
+            "description": "AutoPlay",
+            "required": true,
+            "type": "boolean"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/framework.Success"
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      }
+    },
+    "/users/{id}/stats": {
+      "get": {
+        "tags": [
+          "stats"
+        ],
+        "description": "Get all user's session statistics.",
+        "operationId": "GetStatsByUserID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "User Id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/models.Stat"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "stats"
+        ],
+        "description": "Save user's session statistics.",
+        "operationId": "PutStats",
+        "consumes": [
+          "application/x-www-form-urlencoded"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "User Id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "Id",
+            "in": "formData",
+            "description": "Stat id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "UserId",
+            "in": "formData",
+            "description": "User id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "AppLanguage",
+            "in": "formData",
+            "description": "AppLanguage",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "LearningLanguage",
+            "in": "formData",
+            "description": "LearningLanguage",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/framework.Success"
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      }
+    },
+    "/users/{id}/tokens": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "description": "Exchange a 3rd party token for a user's authentication token.",
+        "operationId": "GetAuthToken",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "User Id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "token_type",
+            "in": "query",
+            "description": "token_type",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "token_id",
+            "in": "query",
+            "description": "token_id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "description": "token",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/models.AuthToken"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "framework.Success": {
+      "properties": {
+        "success": {
+          "type": "boolean"
+        }
+      }
+    },
+    "github.com/hyperworks/go-getstream.Activity": {
+      "properties": {
+        "actor": {
+          "$ref": "#/definitions/github.com/hyperworks/go-getstream.Slug"
+        },
+        "foreign_id": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "object": {
+          "$ref": "#/definitions/github.com/hyperworks/go-getstream.Slug"
+        },
+        "target": {
+          "$ref": "#/definitions/github.com/hyperworks/go-getstream.Slug"
+        },
+        "time": {
+          "type": "string"
+        },
+        "to": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/github.com/hyperworks/go-getstream.Slug"
+          }
+        },
+        "verb": {
+          "type": "string"
+        }
+      }
+    },
+    "github.com/hyperworks/go-getstream.Slug": {
+      "properties": {
+        "ID": {
+          "type": "string"
+        },
+        "Slug": {
+          "type": "string"
+        },
+        "Token": {
+          "type": "string"
+        }
+      }
+    },
+    "models.Attempt": {
+      "properties": {
+        "CreatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "EntryId": {
+          "type": "string"
+        },
+        "Id": {
+          "type": "string"
+        },
+        "UpdatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "UserId": {
+          "type": "string"
+        }
+      }
+    },
+    "models.AuthToken": {
+      "properties": {
+        "CreatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "Id": {
+          "type": "string"
+        },
+        "ProviderId": {
+          "type": "string"
+        },
+        "Token": {
+          "type": "string"
+        },
+        "Type": {
+          "type": "string"
+        },
+        "UpdatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "UserId": {
+          "type": "string"
+        }
+      }
+    },
+    "models.Comment": {
+      "properties": {
+        "AttemptId": {
+          "type": "string"
+        },
+        "CreatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "Id": {
+          "type": "string"
+        },
+        "UpdatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "UserId": {
+          "type": "string"
+        }
+      }
+    },
+    "models.CreditResult": {
+      "properties": {
+        "Total": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "models.Entry": {
+      "properties": {
+        "CreatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "HasLipsVideo": {
+          "type": "boolean"
+        },
+        "HasSubtitles": {
+          "type": "boolean"
+        },
+        "Id": {
+          "type": "string"
+        },
+        "PronunciationLang": {
+          "type": "string"
+        },
+        "PronunciationText": {
+          "type": "string"
+        },
+        "SpokenLang": {
+          "type": "string"
+        },
+        "SpokenText": {
+          "type": "string"
+        },
+        "Translation": {
+          "type": "string"
+        },
+        "UpdatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "UserId": {
+          "type": "string"
+        }
+      }
+    },
+    "models.RatingSummary": {
+      "properties": {
+        "Negative": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "Positive": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "Sum": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "models.Settings": {
+      "properties": {
+        "AppLanguage": {
+          "type": "string"
+        },
+        "AutoPlay": {
+          "type": "boolean"
+        },
+        "CreatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "Id": {
+          "type": "string"
+        },
+        "LearningLanguage": {
+          "type": "string"
+        },
+        "UpdatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "UserId": {
+          "type": "string"
+        }
+      }
+    },
+    "models.Stat": {
+      "properties": {
+        "AppLanguage": {
+          "type": "string"
+        },
+        "CardsShown": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "CreatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "Date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "Id": {
+          "type": "string"
+        },
+        "ItemsRecorded": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "ItemsReviewed": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "ItemsUploaded": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "LearningLanguage": {
+          "type": "string"
+        },
+        "SecondsInSession": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "UpdatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "UserId": {
+          "type": "string"
+        }
+      }
+    },
+    "models.Subtitle": {
+      "properties": {
+        "CreatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "EntryId": {
+          "type": "string"
+        },
+        "Id": {
+          "type": "string"
+        },
+        "SpokenLang": {
+          "type": "string"
+        },
+        "SpokenText": {
+          "type": "string"
+        },
+        "TranslationLang": {
+          "type": "string"
+        },
+        "TranslationText": {
+          "type": "string"
+        },
+        "UpdatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "models.Tag": {
+      "properties": {
+        "CreatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "Id": {
+          "type": "string"
+        },
+        "Name": {
+          "type": "string"
+        },
+        "PronunciationLang": {
+          "type": "string"
+        },
+        "SpokenLang": {
+          "type": "string"
+        },
+        "Type": {
+          "type": "string"
+        },
+        "UpdatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "models.User": {
+      "properties": {
+        "CognitoId": {
+          "type": "string"
+        },
+        "CreatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "FullName": {
+          "type": "string"
+        },
+        "Id": {
+          "type": "string"
+        },
+        "UpdatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "Username": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "api_key": {
+      "type": "apiKey",
+      "name": "access_token",
+      "in": "query"
+    }
+  },
+  "parameters": {
+    "bunndleQuery": {
+      "name": "bundle_version",
+      "in": "query",
+      "description": "bundle_version for ios",
+      "type": "string"
+    },
+    "limitQuery": {
+      "name": "limit",
+      "in": "query",
+      "description": "Limit of attempts",
+      "type": "integer",
+      "format": "int32"
+    },
+    "practiceQuery": {
+      "name": "practicing_lang",
+      "in": "query",
+      "description": "practicing_lang",
+      "type": "string"
+    },
+    "skipQuery": {
+      "name": "skip",
+      "in": "query",
+      "description": "Skip index of attempts",
+      "type": "integer",
+      "format": "int32"
+    },
+    "spokenQuery": {
+      "name": "spoken",
+      "in": "query",
+      "description": "Spoken",
+      "type": "string"
+    },
+    "userLangQuery": {
+      "name": "user_lang",
+      "in": "query",
+      "description": "user_lang",
+      "type": "string"
+    },
+    "versionCodeQuery": {
+      "name": "version_code",
+      "in": "query",
+      "description": "version_code for android",
+      "type": "string"
+    }
+  }
+}

@@ -1,8 +1,4 @@
-package arlong
-
-import (
-	"encoding/json"
-)
+package schema
 
 const (
 	QUERY    = "query"
@@ -32,14 +28,8 @@ const (
 	MIME_MULTIPART = "multipart/form-data"
 )
 
-var swagger *Swagger
-
-func init() {
-	newSwagger()
-}
-
-func newSwagger() {
-	swagger = &Swagger{
+func New() *Swagger {
+	return &Swagger{
 		Swagger:             "2.0",
 		Paths:               make(map[string]*Path),
 		Definitions:         make(map[string]*Schema),
@@ -143,7 +133,7 @@ type Schema struct {
 	Items                *Schema            `json:"items,omitempty"`
 	Ref                  string             `json:"$ref,omitempty"`
 	AdditionalProperties *Schema            `json:"additionalProperties,omitempty"`
-	rawRefName           string             `json:"-"`
+	RawRefName           string             `json:"-"`
 }
 
 type Items struct {
@@ -197,8 +187,4 @@ type Header struct {
 	MinLength   int    `json:"minLength,omitempty"`
 	MaxItems    int    `json:"maxItems,omitempty"`
 	MinItems    int    `json:"minItems,omitempty"`
-}
-
-func jsonFormat() ([]byte, error) {
-	return json.Marshal(swagger)
 }

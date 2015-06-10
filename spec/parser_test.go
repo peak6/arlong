@@ -1,4 +1,4 @@
-package arlong
+package spec
 
 import (
 	"github.com/kr/pretty"

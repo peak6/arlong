@@ -1,7 +1,9 @@
-package arlong
+package spec
 
 import (
+	"encoding/json"
 	"github.com/Sirupsen/logrus"
+	. "github.com/plimble/arlong/schema"
 	"github.com/plimble/utils/parsetype"
 	"go/ast"
 	"go/parser"
@@ -12,6 +14,7 @@ import (
 )
 
 type Parser struct {
+	swagger         *Swagger
 	packages        []*ast.Package
 	usedDefinitions []*Schema
 	usedParameters  []string
@@ -28,7 +31,7 @@ func NewParser(basePkgPath string) *Parser {
 }
 
 func (p *Parser) Parse() error {
-	newSwagger()
+	p.swagger = New()
 	p.usedDefinitions = []*Schema{}
 	p.usedParameters = []string{}
 	p.usedResponses = []string{}
@@ -52,7 +55,7 @@ func (p *Parser) JSON() ([]byte, error) {
 			return nil, err
 		}
 
-		result, err := jsonFormat()
+		result, err := json.Marshal(p.swagger)
 		if err != nil {
 			return nil, err
 		}
@@ -96,10 +99,10 @@ func (p *Parser) parseDefinitionModels() {
 
 	packNames := make(map[string]struct{})
 	for _, val := range p.usedDefinitions {
-		index := strings.LastIndex(val.rawRefName, ".")
-		data := val.rawRefName
+		index := strings.LastIndex(val.RawRefName, ".")
+		data := val.RawRefName
 		if index > 0 {
-			data = val.rawRefName[:index]
+			data = val.RawRefName[:index]
 		}
 
 		packNames[data] = struct{}{}
@@ -114,20 +117,20 @@ func (p *Parser) parseDefinitionModels() {
 	for _, val := range p.usedDefinitions {
 		def := &Schema{}
 
-		if _, ok := parser.Types[val.rawRefName]; !ok {
-			logrus.Errorf("Could not find %s package", val.rawRefName)
+		if _, ok := parser.Types[val.RawRefName]; !ok {
+			logrus.Errorf("Could not find %s package", val.RawRefName)
 			continue
 		}
 
-		pType := parser.Types[val.rawRefName]
+		pType := parser.Types[val.RawRefName]
 
 		if pType.Doc != nil {
 			p.parseDefinitionOptions(def, pType.Doc.List)
 		}
 		p.parseDefinitionModel(def, pType)
 
-		keyName := val.rawRefName
-		swagger.Definitions[keyName] = def
+		keyName := val.RawRefName
+		p.swagger.Definitions[keyName] = def
 	}
 }
 
@@ -173,46 +176,46 @@ func (p *Parser) parseSwagger(comments []*ast.Comment) int {
 			tag, vals := getValues(comments[i].Text[index:])
 			switch tag {
 			case "@Title":
-				swagger.Info.Title = vals
+				p.swagger.Info.Title = vals
 			case "@Description":
-				swagger.Info.Description = vals
+				p.swagger.Info.Description = joinString(p.swagger.Info.Description, vals)
 			case "@BasePath":
-				swagger.BasePath = vals
+				p.swagger.BasePath = vals
 			case "@Term":
-				swagger.Info.TermsOfService = vals
+				p.swagger.Info.TermsOfService = vals
 			case "@Contact":
-				if swagger.Info.Contact == nil {
-					swagger.Info.Contact = &Contact{}
+				if p.swagger.Info.Contact == nil {
+					p.swagger.Info.Contact = &Contact{}
 				}
 				data := getValueByKey(vals)
-				swagger.Info.Contact.Name = data["name"]
-				swagger.Info.Contact.Email = data["email"]
-				swagger.Info.Contact.URL = data["url"]
+				p.swagger.Info.Contact.Name = data["name"]
+				p.swagger.Info.Contact.Email = data["email"]
+				p.swagger.Info.Contact.URL = data["url"]
 			case "@License":
-				if swagger.Info.License == nil {
-					swagger.Info.License = &License{}
+				if p.swagger.Info.License == nil {
+					p.swagger.Info.License = &License{}
 				}
 				data := getValueByKey(vals)
-				swagger.Info.License.Name = data["name"]
-				swagger.Info.License.URL = data["url"]
+				p.swagger.Info.License.Name = data["name"]
+				p.swagger.Info.License.URL = data["url"]
 			case "@Version":
-				swagger.Info.Version = vals
+				p.swagger.Info.Version = vals
 			case "@Schemes":
-				swagger.Schemes = getValueStrings(vals)
+				p.swagger.Schemes = getValueStrings(vals)
 			case "@Consumes":
 				valsArray := getValueStrings(vals)
 				for i := 0; i < len(valsArray); i++ {
 					valsArray[i] = getMime(valsArray[i])
 				}
-				swagger.Consumes = valsArray
+				p.swagger.Consumes = valsArray
 			case "@Produces":
 				valsArray := getValueStrings(vals)
 				for i := 0; i < len(valsArray); i++ {
 					valsArray[i] = getMime(valsArray[i])
 				}
-				swagger.Produces = valsArray
+				p.swagger.Produces = valsArray
 			case "@Security":
-				swagger.Security = append(swagger.Security, getValueMapStrings(vals))
+				p.swagger.Security = append(p.swagger.Security, getValueMapStrings(vals))
 			}
 		}
 	}
@@ -234,7 +237,7 @@ func (p *Parser) parseGlobalResponse(comment *ast.Comment) {
 		if tag == "@GlobalResponse" {
 			resp := &Responses{}
 			p.parseResponse(resp, getValueByKey(vals))
-			swagger.Responses[respName] = resp
+			p.swagger.Responses[respName] = resp
 		}
 	}
 }
@@ -253,7 +256,7 @@ func (p *Parser) parseParamGlobal(comment *ast.Comment) {
 		if tag == "@GlobalParam" {
 			param := &Parameter{}
 			p.parseParam(param, getValueByKey(vals))
-			swagger.Parameters[paramName] = param
+			p.swagger.Parameters[paramName] = param
 		}
 	}
 }
@@ -272,13 +275,13 @@ func (p *Parser) parseSecurityDefinition(comments []*ast.Comment) int {
 			switch tag {
 			case "@SecurityDefinition":
 				def = &SecurityDefinitions{}
-				swagger.SecurityDefinitions[vals] = def
+				p.swagger.SecurityDefinitions[vals] = def
 			case "@Name":
 				def.Name = vals
 			case "@Type":
 				def.Type = vals
 			case "@Description":
-				def.Description = vals
+				def.Description = joinString(def.Description, vals)
 			case "@In":
 				def.In = vals
 			case "@Flow":
@@ -311,29 +314,29 @@ func (p *Parser) parsePath(comments []*ast.Comment) int {
 			switch tag {
 			case "@Path":
 				path = vals
-				if swagger.Paths[vals] == nil {
-					swagger.Paths[vals] = &Path{}
+				if p.swagger.Paths[vals] == nil {
+					p.swagger.Paths[vals] = &Path{}
 				}
 			case "@Method":
 				switch vals {
 				case "GET":
 					method = &Operation{}
-					swagger.Paths[path].GET = method
+					p.swagger.Paths[path].GET = method
 				case "POST":
 					method = &Operation{}
-					swagger.Paths[path].POST = method
+					p.swagger.Paths[path].POST = method
 				case "PUT":
 					method = &Operation{}
-					swagger.Paths[path].PUT = method
+					p.swagger.Paths[path].PUT = method
 				case "DELETE":
 					method = &Operation{}
-					swagger.Paths[path].DELETE = method
+					p.swagger.Paths[path].DELETE = method
 				case "OPTIONS":
 					method = &Operation{}
-					swagger.Paths[path].OPTIONS = method
+					p.swagger.Paths[path].OPTIONS = method
 				case "HEAD":
 					method = &Operation{}
-					swagger.Paths[path].HEAD = method
+					p.swagger.Paths[path].HEAD = method
 				default:
 					panic("Unsupported method")
 				}
@@ -352,7 +355,7 @@ func (p *Parser) parsePath(comments []*ast.Comment) int {
 			case "@Summary":
 				method.Summary = vals
 			case "@Description":
-				method.Description = vals
+				method.Description = joinString(method.Description, vals)
 			case "@Deprecated":
 				method.Deprecated = true
 			case "@Schemes":
@@ -416,14 +419,14 @@ func (p *Parser) parseDefinition(comments []*ast.Comment) int {
 			switch tag {
 			case "@Definition":
 				defName = vals
-				if swagger.Definitions[defName] == nil {
-					swagger.Definitions[defName] = &Schema{}
+				if p.swagger.Definitions[defName] == nil {
+					p.swagger.Definitions[defName] = &Schema{}
 				}
 			case "@Description":
-				swagger.Definitions[defName].Description = vals
+				p.swagger.Definitions[defName].Description = joinString(p.swagger.Definitions[defName].Description, vals)
 			case "@Property":
-				if swagger.Definitions[defName].Properties == nil {
-					swagger.Definitions[defName].Properties = make(map[string]*Schema)
+				if p.swagger.Definitions[defName].Properties == nil {
+					p.swagger.Definitions[defName].Properties = make(map[string]*Schema)
 				}
 
 				propText := strings.Replace(vals, "\t", " ", -1)
@@ -436,18 +439,18 @@ func (p *Parser) parseDefinition(comments []*ast.Comment) int {
 				def := &Schema{}
 				valArray := getValueByKey(propVals)
 				p.parseDefinitionField(def, valArray)
-				swagger.Definitions[defName].Properties[propName] = def
+				p.swagger.Definitions[defName].Properties[propName] = def
 			case "@Type":
-				swagger.Definitions[defName].Type, swagger.Definitions[defName].Format, _ = getTypeFormat(vals)
+				p.swagger.Definitions[defName].Type, p.swagger.Definitions[defName].Format, _ = getTypeFormat(vals)
 			case "@Required":
-				swagger.Definitions[defName].Required = getValueStrings(vals)
+				p.swagger.Definitions[defName].Required = getValueStrings(vals)
 			case "@Items":
-				if swagger.Definitions[defName].Items == nil {
-					swagger.Definitions[defName].Items = &Schema{}
+				if p.swagger.Definitions[defName].Items == nil {
+					p.swagger.Definitions[defName].Items = &Schema{}
 				}
 				data := getValueByKey(vals)
 				for key, val := range data {
-					p.parseSchema(swagger.Definitions[defName].Items, key, val)
+					p.parseSchema(p.swagger.Definitions[defName].Items, key, val)
 				}
 			}
 		}
@@ -526,7 +529,7 @@ func (p *Parser) parseSchema(s *Schema, key, val string) {
 		s.Type, s.Format, _ = getTypeFormat(val)
 	case key == "$ref":
 		s.Ref = "#/definitions/" + val
-		s.rawRefName = val
+		s.RawRefName = val
 		p.usedDefinitions = append(p.usedDefinitions, s)
 	case pathMatch("items.*", key):
 		if s.Items == nil {
@@ -589,7 +592,7 @@ func (p *Parser) parseDefinitionOptions(def *Schema, comments []*ast.Comment) {
 			tag, vals := getValues(comments[i].Text[index:])
 			switch tag {
 			case "@Description":
-				def.Description = vals
+				def.Description = joinString(def.Description, vals)
 			}
 		}
 	}
@@ -627,7 +630,7 @@ func (p *Parser) parsePropertiesOptions(name string, def *Schema, prop *Schema, 
 			tag, vals := getValues(comments[i].Text[index:])
 			switch tag {
 			case "@Description":
-				prop.Description = vals
+				prop.Description = joinString(prop.Description, vals)
 			case "@Required":
 				def.Required = append(def.Required, name)
 			}
@@ -643,9 +646,9 @@ func (p *Parser) parseDefinitionModel(def *Schema, pType *parsetype.Type) {
 			case "struct", "ref":
 				// p.parseDefinitionModel(def, pType.RefType)
 				def.Ref = "#/definitions/" + pType.RefType.Name
-				if _, ok := swagger.Definitions[pType.RefType.Name]; !ok {
-					swagger.Definitions[pType.RefType.Name] = &Schema{}
-					p.parseDefinitionModel(swagger.Definitions[pType.RefType.Name], pType.RefType)
+				if _, ok := p.swagger.Definitions[pType.RefType.Name]; !ok {
+					p.swagger.Definitions[pType.RefType.Name] = &Schema{}
+					p.parseDefinitionModel(p.swagger.Definitions[pType.RefType.Name], pType.RefType)
 				}
 			default:
 				def.Type, def.Format, _ = getTypeFormat(pType.RefType.Type)
@@ -698,13 +701,13 @@ func (p *Parser) parseDefinitionModel(def *Schema, pType *parsetype.Type) {
 
 func (p *Parser) validate() {
 	for _, defName := range p.usedParameters {
-		if _, ok := swagger.Parameters[defName]; !ok {
+		if _, ok := p.swagger.Parameters[defName]; !ok {
 			panic("cannot found " + defName + " in parameters")
 		}
 	}
 
 	for _, defName := range p.usedResponses {
-		if _, ok := swagger.Responses[defName]; !ok {
+		if _, ok := p.swagger.Responses[defName]; !ok {
 			panic("cannot found " + defName + " in responses")
 		}
 	}
@@ -712,7 +715,7 @@ func (p *Parser) validate() {
 
 func (p *Parser) mergeAll() {
 	for _, val := range p.usedDefinitions {
-		cloneSchema := swagger.Definitions[val.rawRefName]
+		cloneSchema := p.swagger.Definitions[val.RawRefName]
 		val.Ref = cloneSchema.Ref
 		val.AdditionalProperties = cloneSchema.AdditionalProperties
 		val.AllOf = cloneSchema.AllOf
@@ -723,5 +726,5 @@ func (p *Parser) mergeAll() {
 		val.Required = cloneSchema.Required
 		val.Type = cloneSchema.Type
 	}
-	swagger.Definitions = nil
+	p.swagger.Definitions = nil
 }

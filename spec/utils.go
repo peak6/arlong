@@ -1,4 +1,4 @@
-package arlong
+package spec
 
 import (
 	"path"
@@ -6,6 +6,10 @@ import (
 	"strings"
 	"unicode/utf8"
 )
+
+func joinString(a, b string) string {
+	return strings.Join([]string{a, b}, " ")
+}
 
 func findAt(text string) int {
 	size := 0
