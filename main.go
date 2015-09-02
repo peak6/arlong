@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/codegangsta/cli"
-	"github.com/plimble/arlong/spec"
+	"github.com/peak6/arlong/spec"
 	"io/ioutil"
 	"os"
 	"path"
