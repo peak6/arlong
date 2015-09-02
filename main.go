@@ -10,7 +10,7 @@ import (
 
 func main() {
 	app := cli.NewApp()
-	app.Version = "1.0.0"
+	app.Version = "1.0.1"
 	app.Name = "arlong"
 	app.Usage = "Genrate Swagger 2.0"
 	app.Flags = []cli.Flag{

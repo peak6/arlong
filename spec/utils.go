@@ -11,6 +11,10 @@ func joinString(a, b string) string {
 	return strings.Join([]string{a, b}, " ")
 }
 
+func fixPath(s string) string {
+	return strings.Replace(s, "/", ".", -1)
+}
+
 func findAt(text string) int {
 	size := 0
 	index := 0

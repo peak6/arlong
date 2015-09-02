@@ -113,10 +113,8 @@ func (p *Parser) parseDefinitionModels() {
 	}
 
 	parser.MergeComposite()
-
 	for _, val := range p.usedDefinitions {
 		def := &Schema{}
-
 		if _, ok := parser.Types[val.RawRefName]; !ok {
 			logrus.Errorf("Could not find %s package", val.RawRefName)
 			continue
@@ -130,7 +128,7 @@ func (p *Parser) parseDefinitionModels() {
 		p.parseDefinitionModel(def, pType)
 
 		keyName := val.RawRefName
-		p.swagger.Definitions[keyName] = def
+		p.swagger.Definitions[fixPath(keyName)] = def
 	}
 }
 
@@ -463,7 +461,7 @@ func (p *Parser) parseDefinitionField(def *Schema, vals map[string]string) {
 	for key, val := range vals {
 		switch {
 		case key == "$ref":
-			def.Ref = "#/definitions/" + val
+			def.Ref = "#/definitions/" + fixPath(val)
 		case key == "type":
 			def.Type, def.Format, _ = getTypeFormat(val)
 		case key == "description" || key == "desc":
@@ -528,7 +526,7 @@ func (p *Parser) parseSchema(s *Schema, key, val string) {
 	case key == "type":
 		s.Type, s.Format, _ = getTypeFormat(val)
 	case key == "$ref":
-		s.Ref = "#/definitions/" + val
+		s.Ref = "#/definitions/" + fixPath(val)
 		s.RawRefName = val
 		p.usedDefinitions = append(p.usedDefinitions, s)
 	case pathMatch("items.*", key):
@@ -637,7 +635,6 @@ func (p *Parser) parsePropertiesOptions(name string, def *Schema, prop *Schema, 
 		}
 	}
 }
-
 func (p *Parser) parseDefinitionModel(def *Schema, pType *parsetype.Type) {
 	switch pType.Type {
 	case "ref":
@@ -645,7 +642,7 @@ func (p *Parser) parseDefinitionModel(def *Schema, pType *parsetype.Type) {
 			switch pType.RefType.Type {
 			case "struct", "ref":
 				// p.parseDefinitionModel(def, pType.RefType)
-				def.Ref = "#/definitions/" + pType.RefType.Name
+				def.Ref = "#/definitions/" + fixPath(pType.RefType.Name)
 				if _, ok := p.swagger.Definitions[pType.RefType.Name]; !ok {
 					p.swagger.Definitions[pType.RefType.Name] = &Schema{}
 					p.parseDefinitionModel(p.swagger.Definitions[pType.RefType.Name], pType.RefType)
