@@ -3,8 +3,8 @@ package spec
 import (
 	"encoding/json"
 	"github.com/Sirupsen/logrus"
-	. "github.com/plimble/arlong/schema"
-	"github.com/plimble/utils/parsetype"
+	. "github.com/peak6/arlong/schema"
+	"github.com/peak6/utils/parsetype"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -417,9 +417,37 @@ func (p *Parser) parseDefinition(comments []*ast.Comment) int {
 			switch tag {
 			case "@Definition":
 				defName = vals
-				if p.swagger.Definitions[defName] == nil {
-					p.swagger.Definitions[defName] = &Schema{}
-				}
+				p.parseNamedDefinition(comments, defName)
+			}
+		}
+	}
+
+	return i
+}
+
+func (p *Parser) parseNamedDefinition(comments []*ast.Comment, defName string) int {
+	if p.swagger.Definitions[defName] == nil {
+		p.swagger.Definitions[defName] = &Schema{}
+	} else {
+		// already parsed this somewhere else, bye
+		i := 0
+		for ; i < len(comments); i++ {
+			if strings.TrimSpace(comments[i].Text) == "//" {
+				return i
+			}
+		}
+		return i
+	}
+	i := 0
+	for ; i < len(comments); i++ {
+		if strings.TrimSpace(comments[i].Text) == "//" {
+			return i
+		}
+
+		index := findAt(comments[i].Text)
+		if index > 0 {
+			tag, vals := getValues(comments[i].Text[index:])
+			switch tag {
 			case "@Description":
 				p.swagger.Definitions[defName].Description = joinString(p.swagger.Definitions[defName].Description, vals)
 			case "@Property":
@@ -442,6 +470,14 @@ func (p *Parser) parseDefinition(comments []*ast.Comment) int {
 				p.swagger.Definitions[defName].Type, p.swagger.Definitions[defName].Format, _ = getTypeFormat(vals)
 			case "@Required":
 				p.swagger.Definitions[defName].Required = getValueStrings(vals)
+			case "@Enum":
+				data := getValueStrings(vals)
+				if p.swagger.Definitions[defName].Enum == nil {
+					p.swagger.Definitions[defName].Enum = make([]string, 0)
+					for _, val := range data {
+						p.swagger.Definitions[defName].Enum = append(p.swagger.Definitions[defName].Enum, val)
+					}
+				}
 			case "@Items":
 				if p.swagger.Definitions[defName].Items == nil {
 					p.swagger.Definitions[defName].Items = &Schema{}
@@ -517,6 +553,12 @@ func (p *Parser) parseParam(param *Parameter, vals map[string]string) {
 			param.MaxItems = strToInt(val)
 		case key == "minItems":
 			param.MinItems = strToInt(val)
+		case key == "enum":
+			valsArray := getValueStrings(val)
+			for i := 0; i < len(valsArray); i++ {
+				valsArray[i] = getMime(valsArray[i])
+			}
+			param.Enum = valsArray
 		}
 	}
 }
@@ -558,6 +600,12 @@ func (p *Parser) parseItem(item *Items, key, val string) {
 		item.MaxItems = strToInt(val)
 	case key == "minItems":
 		item.MinItems = strToInt(val)
+	case key == "enum":
+		valsArray := getValueStrings(val)
+		for i := 0; i < len(valsArray); i++ {
+			valsArray[i] = getMime(valsArray[i])
+		}
+		item.Enum = valsArray
 	}
 }
 
@@ -642,13 +690,36 @@ func (p *Parser) parseDefinitionModel(def *Schema, pType *parsetype.Type) {
 			switch pType.RefType.Type {
 			case "struct", "ref":
 				// p.parseDefinitionModel(def, pType.RefType)
+				pType.RefType.Name = fixPath(pType.RefType.Name)
 				def.Ref = "#/definitions/" + fixPath(pType.RefType.Name)
 				if _, ok := p.swagger.Definitions[pType.RefType.Name]; !ok {
 					p.swagger.Definitions[pType.RefType.Name] = &Schema{}
 					p.parseDefinitionModel(p.swagger.Definitions[pType.RefType.Name], pType.RefType)
 				}
 			default:
-				def.Type, def.Format, _ = getTypeFormat(pType.RefType.Type)
+				// A primitive or an alias for a primitive.
+				// override with docs if found
+				if pType.RefType.Doc != nil {
+					p.parseNamedDefinition(pType.RefType.Doc.List, fixPath(pType.RefType.Name))
+					newDef := p.swagger.Definitions[fixPath(pType.RefType.Name)]
+					// def will already be populated with arlong fields if present before this
+					if newDef != nil {
+						if def.Type == "" && newDef.Type != "" {
+							def.Type = newDef.Type
+							def.Format = newDef.Format
+						}
+						if def.Description == "" && newDef.Description != "" {
+							def.Description = newDef.Description
+						}
+						if newDef.Enum != nil {
+							def.Enum = newDef.Enum
+						}
+					}
+				}
+				// if no annotations present, use the primitive referenced type
+				if def.Type == "" {
+					def.Type, def.Format, _ = getTypeFormat(pType.RefType.Type)
+				}
 			}
 		}
 	case "struct":
@@ -673,6 +744,27 @@ func (p *Parser) parseDefinitionModel(def *Schema, pType *parsetype.Type) {
 				name = nameDoc
 			} else {
 				name = key
+			}
+
+			if arlongTags := val.Tags.Get(`arlong`); arlongTags != "" {
+				for _, tag := range strings.Split(arlongTags, ",") {
+					tag = strings.TrimSpace(tag)
+					data := strings.Split(tag, "=")
+					switch {
+					case data[0] == "required":
+						def.Required = append(def.Required, name)
+					case data[0] == "type":
+						propDef.Type, propDef.Format, _ = getTypeFormat(data[1])
+					case data[0] == "description" || data[0] == "desc":
+						propDef.Description = joinString(propDef.Description, data[1])
+					case data[0] == "enum":
+						valsArray := getValueStrings(data[1])
+						for i := 0; i < len(valsArray); i++ {
+							valsArray[i] = getMime(valsArray[i])
+						}
+						propDef.Enum = valsArray
+					}
+				}
 			}
 
 			if val.Doc != nil {

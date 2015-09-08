@@ -121,6 +121,7 @@ type Parameter struct {
 	MinLength       int         `json:"minLength,omitempty"`
 	MaxItems        int         `json:"maxItems,omitempty"`
 	MinItems        int         `json:"minItems,omitempty"`
+	Enum            []string    `json:"enum,omitempty"`
 }
 
 type Schema struct {
@@ -134,6 +135,7 @@ type Schema struct {
 	Ref                  string             `json:"$ref,omitempty"`
 	AdditionalProperties *Schema            `json:"additionalProperties,omitempty"`
 	RawRefName           string             `json:"-"`
+	Enum                 []string           `json:"enum,omitempty"`
 }
 
 type Items struct {
@@ -146,6 +148,7 @@ type Items struct {
 	MinLength int         `json:"minLength,omitempty"`
 	MaxItems  int         `json:"maxItems,omitempty"`
 	MinItems  int         `json:"minItems,omitempty"`
+	Enum      []string    `json:"enum,omitempty"`
 }
 
 type Responses struct {
@@ -176,15 +179,16 @@ type SecurityDefinitions struct {
 }
 
 type Header struct {
-	Description string `json:"description,omitempty"`
-	Type        string `json:"type,omitempty"`
-	Format      string `json:"format,omitempty"`
-	Items       *Items `json:"items,omitempty"`
-	Default     string `json:"default,omitempty"`
-	Maximum     int    `json:"maximum,omitempty"`
-	Minimum     int    `json:"minimum,omitempty"`
-	MaxLength   int    `json:"maxLength,omitempty"`
-	MinLength   int    `json:"minLength,omitempty"`
-	MaxItems    int    `json:"maxItems,omitempty"`
-	MinItems    int    `json:"minItems,omitempty"`
+	Description string   `json:"description,omitempty"`
+	Type        string   `json:"type,omitempty"`
+	Format      string   `json:"format,omitempty"`
+	Items       *Items   `json:"items,omitempty"`
+	Default     string   `json:"default,omitempty"`
+	Maximum     int      `json:"maximum,omitempty"`
+	Minimum     int      `json:"minimum,omitempty"`
+	MaxLength   int      `json:"maxLength,omitempty"`
+	MinLength   int      `json:"minLength,omitempty"`
+	MaxItems    int      `json:"maxItems,omitempty"`
+	MinItems    int      `json:"minItems,omitempty"`
+	Enum        []string `json:enum,omitempty"`
 }
